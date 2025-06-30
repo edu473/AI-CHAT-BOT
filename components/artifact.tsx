@@ -21,7 +21,6 @@ import { ArtifactCloseButton } from './artifact-close-button';
 import { ArtifactMessages } from './artifact-messages';
 import { useSidebar } from './ui/sidebar';
 import { useArtifact } from '@/hooks/use-artifact';
-import { imageArtifact } from '@/artifacts/image/client';
 import { codeArtifact } from '@/artifacts/code/client';
 import { sheetArtifact } from '@/artifacts/sheet/client';
 import { textArtifact } from '@/artifacts/text/client';
@@ -32,7 +31,6 @@ import type { VisibilityType } from './visibility-selector';
 export const artifactDefinitions = [
   textArtifact,
   codeArtifact,
-  imageArtifact,
   sheetArtifact,
 ];
 export type ArtifactKind = (typeof artifactDefinitions)[number]['kind'];
