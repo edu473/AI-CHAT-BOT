@@ -57,23 +57,32 @@ const getEventHistory = tool({
     try {
       const numericHostId = hostid.replace(/\D/g, '');
 
-      const problemEvents = await callZabbixAPI('event.get', {
+      // 1. Obtener eventos iniciales
+      const events = await callZabbixAPI('event.get', {
         output: ["eventid", "name", "clock", "r_eventid"],
         hostids: [numericHostId],
         sortfield: ["clock"],
         sortorder: "DESC",
-        limit: 20
+        limit: 100 // Aumentamos el límite para asegurar que capturemos eventos relevantes
       });
 
-      if (!problemEvents || problemEvents.length === 0) {
+      if (!events || events.length === 0) {
         return `No se encontraron eventos recientes para el host con ID ${numericHostId}.`;
       }
 
-      const recoveryEventIds = problemEvents
-        .map((event: any) => event.r_eventid)
-        .filter((id: string) => id && id !== "0");
-      
+      // 2. Filtrar eventos que tienen un r_eventid y no es "0"
+      const problemEvents = events.filter((event: any) => event.r_eventid && event.r_eventid !== "0");
+
+      if (problemEvents.length === 0) {
+        return `No se encontraron eventos de problemas con recuperación para el host con ID ${numericHostId}.`;
+      }
+
+      // 3. Obtener los IDs de los eventos de recuperación
+      const recoveryEventIds = problemEvents.map((event: any) => event.r_eventid);
+
       let recoveryEventMap: { [key: string]: any } = {};
+
+      // 4. Obtener los detalles de los eventos de recuperación si existen
       if (recoveryEventIds.length > 0) {
         const recoveryEvents = await callZabbixAPI('event.get', {
           eventids: recoveryEventIds,
@@ -85,6 +94,7 @@ const getEventHistory = tool({
         }, {});
       }
 
+      // 5. Formatear la salida
       const formattedEvents = problemEvents.map((event: any) => {
         const problemDate = new Date(event.clock * 1000).toLocaleString('es-ES');
         let line = `- Problema: "${event.name}" a las ${problemDate}.`;

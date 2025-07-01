@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  
+
 
   if (pathname.startsWith('/ping')) {
     return new Response('pong', { status: 200 });

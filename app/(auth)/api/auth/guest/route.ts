@@ -5,7 +5,7 @@ import { getToken } from 'next-auth/jwt';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
   const redirectUrl = searchParams.get('redirectUrl') || '/';
 
   const token = await getToken({
@@ -14,13 +14,14 @@ export async function GET(request: Request) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  
+
 
   const [guestUser] = await createGuestUser();
   await signIn('guest', { ...guestUser, redirect: false });
 
   const session = await auth();
-  const response = NextResponse.redirect(redirectUrl);
+  const absoluteRedirectUrl = new URL(redirectUrl, origin).toString();
+  const response = NextResponse.redirect(absoluteRedirectUrl);
 
   if (session) {
     response.cookies.set({
