@@ -160,6 +160,11 @@ const PurePreviewMessage = ({
                 if (state === 'call') {
                   const { args } = toolInvocation;
 
+                  // Do not render the call for Zabbix tools
+                  if (toolName === 'getEventHistoryForHost' || toolName === 'getHostDetails') {
+                    return null;
+                  }
+
                   return (
                     <div
                       key={toolCallId}
@@ -190,6 +195,11 @@ const PurePreviewMessage = ({
 
                 if (state === 'result') {
                   const { result } = toolInvocation;
+
+                  // Do not render the result for Zabbix tools
+                  if (toolName === 'getEventHistoryForHost' || toolName === 'getHostDetails') {
+                    return null;
+                  }
 
                   return (
                     <div key={toolCallId}>

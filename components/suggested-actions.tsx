@@ -19,23 +19,23 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'What are the advantages',
-      label: 'of using Next.js?',
-      action: 'What are the advantages of using Next.js?',
+      title: 'Cual es el estado del cliente ID414786286?',
+      label: 'Cual es el estado?',
+      action: 'Cual es el estado del cliente ID414786286',
     },
     {
-      title: 'Write code to',
-      label: `demonstrate djikstra's algorithm`,
-      action: `Write code to demonstrate djikstra's algorithm`,
+      title: 'Dame el historial de eventos del cliente ID414786286',
+      label: `Historial de eventos`,
+      action: `Historial de eventos del cliente ID414786286`,
     },
     {
-      title: 'Help me write an essay',
-      label: `about silicon valley`,
+      title: 'Corteca proximamente',
+      label: `No funcional aun`,
       action: `Help me write an essay about silicon valley`,
     },
     {
-      title: 'What is the weather',
-      label: 'in San Francisco?',
+      title: 'Altiplano proximamente',
+      label: 'No funcional aun',
       action: 'What is the weather in San Francisco?',
     },
   ];

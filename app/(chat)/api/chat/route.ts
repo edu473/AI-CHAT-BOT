@@ -127,7 +127,8 @@ export async function POST(request: Request) {
 1.  **Flujo de Trabajo Obligatorio:**
     * **Paso 1: Búsqueda del Host.** Cuando el usuario te dé un identificador de host, **DEBES** llamar a la herramienta \`getHostDetails\`. Esta herramienta te devolverá un objeto con el \`hostid\` y un \`summary\`.
     * **Paso 2: Presentar Resumen y Guardar Contexto.** Muestra el \`summary\` al usuario. **DEBES** recordar el \`hostid\` para las siguientes peticiones en esta conversación.
-    * **Paso 3: Obtener Historial.** Si el usuario pide el "historial de eventos", **DEBES** usar la herramienta \`getEventHistory\` pasándole el \`hostid\` que guardaste en el paso anterior.
+    * **Paso 3: Obtener Historial.** Si el usuario pide el "historial de eventos", **DEBES** usar la herramienta \`getEventHistory\` pasándole el \`hostid\` que guardaste en el paso anterior. Si no lo tienes debes llamar a la herramienta \`getHostDetails\` para obtener el \`hostid\`
+    * **Consideracion: Ten presente que el usuario puede pedir el historial de eventos directamente para un cliente pero debe proporcionar algun dato que lo identifique, en dado caso debes iniciar el flujo de trabajo hasta obtener el historial de eventos para enviarselos al cliente.
 
 2.  **Regla de Presentación:**
     * **NUNCA** muestres la salida cruda (JSON o texto plano) de las herramientas en el chat.
