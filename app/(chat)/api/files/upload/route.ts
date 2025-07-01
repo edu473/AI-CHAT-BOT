@@ -1,11 +1,8 @@
-import { put } from '@vercel/blob';
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { writeFile } from 'fs/promises';
-import { NextRequest} from 'next/server';
-import path from 'path';
 
-import { auth } from '@/app/(auth)/auth';
+import { NextResponse , type NextRequest} from 'next/server';
+import { z } from 'zod';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 // Use Blob instead of File since File is not available in Node.js environment
 const FileSchema = z.object({
@@ -37,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   // Ensure the upload directory exists
   try {
-      await require('fs').promises.mkdir(uploadDir, { recursive: true });
+      await require('node:fs').promises.mkdir(uploadDir, { recursive: true });
   } catch (e: any) {
       if (e.code !== 'EEXIST') {
           console.error("Error creating directory", e);

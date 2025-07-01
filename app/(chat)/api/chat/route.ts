@@ -2,18 +2,16 @@ import {
   appendClientMessage,
   appendResponseMessages,
   createDataStream,
-  smoothStream,
   streamText,
+  type CoreMessage,
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import type { RequestHints } from '@/lib/ai/prompts';
 import {
   createStreamId,
-  deleteChatById,
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
-  getStreamIdsByChatId,
   saveChat,
   saveMessages,
 } from '@/lib/db/queries';
@@ -23,6 +21,7 @@ import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
+import { zabbix } from '@/lib/ai/tools/zabbix';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -32,10 +31,9 @@ import {
   createResumableStreamContext,
   type ResumableStreamContext,
 } from 'resumable-stream';
-import { after } from 'next/server';
-import type { Chat } from '@/lib/db/schema';
-import { differenceInSeconds } from 'date-fns';
+import { after , NextResponse } from 'next/server';
 import { ChatSDKError } from '@/lib/errors';
+
 
 export const maxDuration = 60;
 
@@ -118,6 +116,34 @@ export async function POST(request: Request) {
       messages: previousMessages,
       message,
     });
+    
+    // SYSTEM PROMPT CORREGIDO
+    const messagesWithSystemPrompt: CoreMessage[] = [
+        {
+          role: 'system',
+          content: `Eres un asistente de IA de élite, especializado en la administración de Zabbix. Tu propósito es ser una interfaz de lenguaje natural para la API de Zabbix.
+
+**Tus directivas principales son:**
+
+1.  **Priorizar Búsqueda por Identificador**: Si el usuario proporciona un identificador claro (como un ID, número de serie, o nombre de host), **siempre** debes usar la herramienta \`getHostDetails\` primero. Esta es tu herramienta principal para consultas específicas de un host.
+2.  **Interpretar Intenciones**: Para preguntas generales, traduce lo que el usuario quiere decir a la herramienta correcta.
+    * "Clientes caídos" o "problemas" -> \`problem_get\`.
+    * "Listar servidores" -> \`host_get\`.
+    * "Historial de CPU" -> \`history_get\`.
+3.  **Resumir, No Volcar Datos**: Nunca devuelvas el JSON crudo de la API. Procesa los datos y presenta un resumen claro y conciso en español.
+4.  **Ser Proactivo**: Después de dar un resumen, sugiere los siguientes pasos. Por ejemplo, si muestras los problemas de un host, pregunta si el usuario quiere ver el historial de eventos.
+5.  **Idioma**: Responde siempre en español.
+
+**Guía Rápida de Herramientas:**
+
+* **Para un host específico (ID, serial, nombre):** Usa \`getHostDetails\`. Es tu herramienta más importante.
+* **Para problemas generales:** Usa \`problem_get\`.
+* **Para listas de hosts:** Usa \`host_get\`.
+* **Para datos históricos de métricas:** Usa \`history_get\`.`,
+        },
+        ...messages
+    ];
+
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -148,20 +174,8 @@ export async function POST(request: Request) {
       execute: (dataStream) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
-          messages,
+          messages: messagesWithSystemPrompt,
           maxSteps: 5,
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                ],
-          experimental_transform: smoothStream({ chunking: 'word' }),
-          experimental_generateMessageId: generateUUID,
           tools: {
             getWeather,
             createDocument: createDocument({ session, dataStream }),
@@ -170,6 +184,7 @@ export async function POST(request: Request) {
               session,
               dataStream,
             }),
+            ...zabbix,
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
@@ -238,126 +253,6 @@ export async function POST(request: Request) {
       return error.toResponse();
     }
     console.error(error);
-    return Response.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
   }
-}
-
-export async function GET(request: Request) {
-  const streamContext = getStreamContext();
-  const resumeRequestedAt = new Date();
-
-  if (!streamContext) {
-    return new Response(null, { status: 204 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const chatId = searchParams.get('chatId');
-
-  if (!chatId) {
-    return new ChatSDKError('bad_request:api').toResponse();
-  }
-
-  const session = await auth();
-
-  if (!session?.user) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
-  }
-
-  let chat: Chat;
-
-  try {
-    chat = await getChatById({ id: chatId });
-  } catch {
-    return new ChatSDKError('not_found:chat').toResponse();
-  }
-
-  if (!chat) {
-    return new ChatSDKError('not_found:chat').toResponse();
-  }
-
-  if (chat.visibility === 'private' && chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:chat').toResponse();
-  }
-
-  const streamIds = await getStreamIdsByChatId({ chatId });
-
-  if (!streamIds.length) {
-    return new ChatSDKError('not_found:stream').toResponse();
-  }
-
-  const recentStreamId = streamIds.at(-1);
-
-  if (!recentStreamId) {
-    return new ChatSDKError('not_found:stream').toResponse();
-  }
-
-  const emptyDataStream = createDataStream({
-    execute: () => {},
-  });
-
-  const stream = await streamContext.resumableStream(
-    recentStreamId,
-    () => emptyDataStream,
-  );
-
-  /*
-   * For when the generation is streaming during SSR
-   * but the resumable stream has concluded at this point.
-   */
-  if (!stream) {
-    const messages = await getMessagesByChatId({ id: chatId });
-    const mostRecentMessage = messages.at(-1);
-
-    if (!mostRecentMessage) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    if (mostRecentMessage.role !== 'assistant') {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const messageCreatedAt = new Date(mostRecentMessage.createdAt);
-
-    if (differenceInSeconds(resumeRequestedAt, messageCreatedAt) > 15) {
-      return new Response(emptyDataStream, { status: 200 });
-    }
-
-    const restoredStream = createDataStream({
-      execute: (buffer) => {
-        buffer.writeData({
-          type: 'append-message',
-          message: JSON.stringify(mostRecentMessage),
-        });
-      },
-    });
-
-    return new Response(restoredStream, { status: 200 });
-  }
-
-  return new Response(stream, { status: 200 });
-}
-
-export async function DELETE(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
-  if (!id) {
-    return new ChatSDKError('bad_request:api').toResponse();
-  }
-
-  const session = await auth();
-
-  if (!session?.user) {
-    return new ChatSDKError('unauthorized:chat').toResponse();
-  }
-
-  const chat = await getChatById({ id });
-
-  if (chat.userId !== session.user.id) {
-    return new ChatSDKError('forbidden:chat').toResponse();
-  }
-
-  const deletedChat = await deleteChatById({ id });
-
-  return Response.json(deletedChat, { status: 200 });
 }

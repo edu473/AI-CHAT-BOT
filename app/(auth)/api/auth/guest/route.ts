@@ -1,5 +1,6 @@
-import { signIn } from '@/app/(auth)/auth';
+import { auth, signIn } from '@/app/(auth)/auth';
 import { isDevelopmentEnvironment } from '@/lib/constants';
+import { createGuestUser } from '@/lib/db/queries';
 import { getToken } from 'next-auth/jwt';
 import { NextResponse } from 'next/server';
 
@@ -13,9 +14,23 @@ export async function GET(request: Request) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  if (token) {
-    return NextResponse.redirect(new URL('/', request.url));
+  
+
+  const [guestUser] = await createGuestUser();
+  await signIn('guest', { ...guestUser, redirect: false });
+
+  const session = await auth();
+  const response = NextResponse.redirect(redirectUrl);
+
+  if (session) {
+    response.cookies.set({
+      name: 'session-token',
+      value: session.user.id,
+      httpOnly: true,
+      path: '/',
+      secure: !isDevelopmentEnvironment,
+    });
   }
 
-  return signIn('guest', { redirect: true, redirectTo: redirectUrl });
+  return response;
 }
