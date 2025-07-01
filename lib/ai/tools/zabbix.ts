@@ -10,13 +10,10 @@ const getHostDetails = tool({
   }),
   execute: async ({ identifier }) => {
     try {
-      // Paso 1: Buscar el host usando el identificador.
       const hosts = await callZabbixAPI('host.get', {
         output: ['hostid', 'host', 'name', 'status'],
         selectGroups: 'extend',
-        search: {
-          name: identifier,
-        },
+        search: { name: identifier },
         limit: 1,
       });
 
@@ -29,10 +26,9 @@ const getHostDetails = tool({
       const hostName = host.host;
       const hostGroups = host.groups.map((g: any) => g.name).join(', ');
 
-      // Paso 2: Buscar problemas activos para ese host (SIN ORDENAMIENTO).
       const problems = await callZabbixAPI('problem.get', {
         output: 'extend',
-        hostids: [hostId], // Asegúrate de que hostids sea un array
+        hostids: [hostId],
       });
 
       const problemCount = problems.length;
@@ -42,7 +38,6 @@ const getHostDetails = tool({
         problemSummary = `Tiene ${problemCount} problema(s) activo(s). Los más recientes son:\n${problemNames}`;
       }
 
-      // Paso 3: Devolver un resumen completo y útil.
       return `
 Host encontrado: ${hostName}
 Grupos (Zonas): ${hostGroups}
@@ -50,24 +45,45 @@ Estado: ${problemSummary}
 
 Puedes pedirme el "historial de eventos" o "más detalles de los problemas" para este host.
       `.trim();
-
     } catch (error: any) {
       return { error: `Error al buscar el host: ${error.message}` };
     }
   },
 });
 
+// --- Nueva Herramienta para Items ---
+const item_get = tool({
+    description: "Obtiene información sobre los items (métricas) de un host, como 'ICMP ping'. Úsala para encontrar el 'itemid' necesario para otras herramientas como 'history_get'.",
+    parameters: z.object({
+        hostids: z.array(z.string()).describe("El ID del host para el cual buscar los items."),
+        search: z.object({
+            name: z.string().describe("El nombre de la métrica a buscar, por ejemplo 'ICMP ping'.")
+        }).describe("Filtro de búsqueda para los items."),
+        limit: z.number().optional().describe('Limita el número de resultados.'),
+    }),
+    execute: async (params) => {
+        try {
+            const items = await callZabbixAPI('item.get', { output: ["itemid", "name"], ...params });
+            if (!items || items.length === 0) {
+                return "No se encontró ningún item con ese nombre para el host especificado.";
+            }
+            // Devuelve solo la información relevante para que la IA la use.
+            return items.map((item: any) => ({ itemid: item.itemid, name: item.name }));
+        } catch (error: any) {
+            return { error: `Error al buscar el item: ${error.message}` };
+        }
+    },
+});
 
 export const zabbix = {
-  getHostDetails, // <-- Nueva herramienta principal
-
-  // Herramientas más específicas que la IA puede usar si es necesario
+  getHostDetails,
+  item_get, // <-- Nueva herramienta
+  
   host_get: tool({
-    description: 'Obtiene una lista de hosts de Zabbix con opciones de filtrado avanzadas.',
+    description: 'Obtiene una lista de hosts de Zabbix.',
     parameters: z.object({
-      filter: z.object({}).passthrough().optional().describe('Filtra los resultados basado en propiedades del host.'),
-      groupids: z.array(z.string()).optional().describe('Devuelve solo hosts que pertenecen a los grupos dados.'),
-      limit: z.number().optional().describe('Limita el número de resultados.'),
+      filter: z.object({}).passthrough().optional(),
+      limit: z.number().optional(),
     }),
     execute: async (params) => {
       try {
@@ -82,8 +98,8 @@ export const zabbix = {
   problem_get: tool({
     description: 'Obtiene una lista de los problemas (alertas) activos en Zabbix.',
     parameters: z.object({
-      hostids: z.array(z.string()).optional().describe('Devuelve solo problemas para los hosts con los IDs dados.'),
-      limit: z.number().optional().describe('Limita el número de resultados.'),
+      hostids: z.array(z.string()).optional(),
+      limit: z.number().optional(),
     }),
     execute: async (params) => {
       try {
@@ -102,9 +118,9 @@ export const zabbix = {
     description: 'Accede al historial de datos de un item (métrica) específico.',
     parameters: z.object({
       itemids: z.array(z.string()).describe('IDs de los items para los que se quiere obtener el historial.'),
-      time_from: z.number().optional().describe('Timestamp de inicio (Unix).'),
-      limit: z.number().optional().describe('Limita el número de resultados.'),
-      history: z.number().optional().describe('Tipo de historial (0: numérico, 1: texto, etc.).'),
+      time_from: z.number().optional(),
+      limit: z.number().optional(),
+      history: z.number().optional(),
     }),
     execute: async (params) => {
       try {
