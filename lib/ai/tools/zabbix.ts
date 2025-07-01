@@ -2,9 +2,8 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { callZabbixAPI } from '@/lib/zabbix-api';
 
-// --- Herramienta Principal para Consultas de Host ---
 const getHostDetails = tool({
-  description: 'Busca un host específico por su nombre, ID o número de serie y devuelve un resumen de su estado, incluyendo problemas activos.',
+  description: 'Busca un host específico por su nombre, ID o número de serie. Devuelve un objeto con el ID interno del host (hostid) y un resumen legible para el usuario.',
   parameters: z.object({
     identifier: z.string().describe('El nombre, ID, o número de serie del host a buscar. Por ejemplo: "FHTTA678754F" o "ID3612012281".'),
   }),
@@ -18,7 +17,7 @@ const getHostDetails = tool({
       });
 
       if (!hosts || hosts.length === 0) {
-        return `No se encontró ningún host con el identificador "${identifier}".`;
+        return { error: `No se encontró ningún host con el identificador "${identifier}".` };
       }
 
       const host = hosts[0];
@@ -31,104 +30,82 @@ const getHostDetails = tool({
         hostids: [hostId],
       });
 
-      const problemCount = problems.length;
       let problemSummary = `Actualmente no hay problemas activos.`;
-      if (problemCount > 0) {
+      if (problems.length > 0) {
         const problemNames = problems.slice(0, 3).map((p: any) => `- ${p.name}`).join('\n');
-        problemSummary = `Tiene ${problemCount} problema(s) activo(s). Los más recientes son:\n${problemNames}`;
+        problemSummary = `Tiene ${problems.length} problema(s) activo(s). Los más recientes son:\n${problemNames}`;
       }
+      
+      // Devuelve un objeto con el hostid y el resumen
+      return {
+        hostid: hostId,
+        summary: `Host encontrado: ${hostName}\nGrupos (Zonas): ${hostGroups}\nEstado: ${problemSummary}\n\nPuedes pedirme el "historial de eventos" o "más detalles de los problemas" para este host.`
+      };
 
-      return `
-Host encontrado: ${hostName}
-Grupos (Zonas): ${hostGroups}
-Estado: ${problemSummary}
-
-Puedes pedirme el "historial de eventos" o "más detalles de los problemas" para este host.
-      `.trim();
     } catch (error: any) {
       return { error: `Error al buscar el host: ${error.message}` };
     }
   },
 });
 
-// --- Nueva Herramienta para Items ---
-const item_get = tool({
-    description: "Obtiene información sobre los items (métricas) de un host, como 'ICMP ping'. Úsala para encontrar el 'itemid' necesario para otras herramientas como 'history_get'.",
-    parameters: z.object({
-        hostids: z.array(z.string()).describe("El ID del host para el cual buscar los items."),
-        search: z.object({
-            name: z.string().describe("El nombre de la métrica a buscar, por ejemplo 'ICMP ping'.")
-        }).describe("Filtro de búsqueda para los items."),
-        limit: z.number().optional().describe('Limita el número de resultados.'),
-    }),
-    execute: async (params) => {
-        try {
-            const items = await callZabbixAPI('item.get', { output: ["itemid", "name"], ...params });
-            if (!items || items.length === 0) {
-                return "No se encontró ningún item con ese nombre para el host especificado.";
-            }
-            // Devuelve solo la información relevante para que la IA la use.
-            return items.map((item: any) => ({ itemid: item.itemid, name: item.name }));
-        } catch (error: any) {
-            return { error: `Error al buscar el item: ${error.message}` };
+const getEventHistory = tool({
+  description: 'Obtiene el historial de eventos de disponibilidad para un host específico usando su ID interno (hostid).',
+  parameters: z.object({
+    hostid: z.string().describe('El ID numérico interno del host de Zabbix.'),
+  }),
+  execute: async ({ hostid }) => {
+    try {
+      const numericHostId = hostid.replace(/\D/g, '');
+
+      const problemEvents = await callZabbixAPI('event.get', {
+        output: ["eventid", "name", "clock", "r_eventid"],
+        hostids: [numericHostId],
+        sortfield: ["clock"],
+        sortorder: "DESC",
+        limit: 20
+      });
+
+      if (!problemEvents || problemEvents.length === 0) {
+        return `No se encontraron eventos recientes para el host con ID ${numericHostId}.`;
+      }
+
+      const recoveryEventIds = problemEvents
+        .map((event: any) => event.r_eventid)
+        .filter((id: string) => id && id !== "0");
+      
+      let recoveryEventMap: { [key: string]: any } = {};
+      if (recoveryEventIds.length > 0) {
+        const recoveryEvents = await callZabbixAPI('event.get', {
+          eventids: recoveryEventIds,
+          output: ["eventid", "clock"]
+        });
+        recoveryEventMap = recoveryEvents.reduce((acc: any, event: any) => {
+          acc[event.eventid] = event;
+          return acc;
+        }, {});
+      }
+
+      const formattedEvents = problemEvents.map((event: any) => {
+        const problemDate = new Date(event.clock * 1000).toLocaleString('es-ES');
+        let line = `- Problema: "${event.name}" a las ${problemDate}.`;
+        
+        const recoveryEvent = recoveryEventMap[event.r_eventid];
+        if (recoveryEvent) {
+          const recoveryDate = new Date(recoveryEvent.clock * 1000).toLocaleString('es-ES');
+          line += ` (Recuperado a las ${recoveryDate})`;
         }
-    },
+        return line;
+      }).join('\n');
+
+      return `Historial de eventos para el host:\n${formattedEvents}`;
+
+    } catch (error: any) {
+      return { error: `Error al obtener el historial de eventos: ${error.message}` };
+    }
+  },
 });
 
 export const zabbix = {
   getHostDetails,
-  item_get, // <-- Nueva herramienta
-  
-  host_get: tool({
-    description: 'Obtiene una lista de hosts de Zabbix.',
-    parameters: z.object({
-      filter: z.object({}).passthrough().optional(),
-      limit: z.number().optional(),
-    }),
-    execute: async (params) => {
-      try {
-        const result = await callZabbixAPI('host.get', { output: 'extend', selectGroups: 'extend', ...params });
-        return result;
-      } catch (error: any) {
-        return { error: error.message };
-      }
-    },
-  }),
-
-  problem_get: tool({
-    description: 'Obtiene una lista de los problemas (alertas) activos en Zabbix.',
-    parameters: z.object({
-      hostids: z.array(z.string()).optional(),
-      limit: z.number().optional(),
-    }),
-    execute: async (params) => {
-      try {
-        const problems = await callZabbixAPI('problem.get', { output: 'extend', ...params });
-         if (!problems || problems.length === 0) {
-          return "No hay problemas activos actualmente.";
-        }
-        return `Hay ${problems.length} problema(s) activo(s).`;
-      } catch (error: any) {
-        return { error: error.message };
-      }
-    },
-  }),
-  
-  history_get: tool({
-    description: 'Accede al historial de datos de un item (métrica) específico.',
-    parameters: z.object({
-      itemids: z.array(z.string()).describe('IDs de los items para los que se quiere obtener el historial.'),
-      time_from: z.number().optional(),
-      limit: z.number().optional(),
-      history: z.number().optional(),
-    }),
-    execute: async (params) => {
-      try {
-        const result = await callZabbixAPI('history.get', params);
-        return result;
-      } catch (error: any) {
-        return { error: error.message };
-      }
-    },
-  }),
+  getEventHistory,
 };
