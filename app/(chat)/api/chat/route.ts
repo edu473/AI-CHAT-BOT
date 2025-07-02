@@ -25,6 +25,7 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { zabbix } from '@/lib/ai/tools/zabbix';
+import { simpleFibra } from '@/lib/ai/tools/simplefibra'; // ✅ Importar las herramientas de SimpleFibra
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -303,18 +304,26 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
               dataStream,
             }),
             ...zabbix,
+            ...simpleFibra, // ✅ Añadir las herramientas de SimpleFibra
           },
           onFinish: async ({ response }) => {
             if (session.user?.id) {
               try {
+                // ✅ Validar que hay mensajes del asistente antes de procesar
+                const assistantMessages = response.messages.filter(
+                  (message) => message.role === 'assistant',
+                );
+
+                if (assistantMessages.length === 0) {
+                  console.log('No assistant messages to save, skipping.');
+                  return;
+                }
+
                 const assistantId = getTrailingMessageId({
-                  messages: response.messages.filter(
-                    (message) => message.role === 'assistant',
-                  ),
+                  messages: assistantMessages,
                 });
 
                 if (!assistantId) {
-                  // No hacemos throw, simplemente no guardamos si no hay ID.
                   console.error('No assistant message ID found, skipping save.');
                   return;
                 }
@@ -326,6 +335,12 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
                 
                 if (!assistantMessage) {
                   console.error('Could not construct assistant message, skipping save.');
+                  return;
+                }
+
+                // ✅ Validar que el mensaje tiene contenido válido antes de guardar
+                if (!assistantMessage.parts || assistantMessage.parts.length === 0) {
+                  console.error('Assistant message has no valid parts, skipping save.');
                   return;
                 }
 
@@ -344,6 +359,7 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
                 });
               } catch (error) {
                 console.error('Failed to save chat:', error);
+                // ✅ No lanzar el error, solo logearlo para evitar que falle la respuesta
               }
             }
           },
