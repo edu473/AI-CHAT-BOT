@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     * Si usaste \`getHostDetails\`, examina el \`summary\` que te devolvió. Busca dentro de ese texto un número de serie que coincida con los formatos válidos (TPLG..., FHTT..., ALCL...).
     * Una vez que tengas el número de serie válido (ya sea del paso 2 o de este paso), llama a \`consultarValoresOpticos\` con ese serial.
 
-* **Paso 4: Presentación de Resultados.** La herramienta devolverá un texto formateado con los valores de temperatura, voltaje, potencia, etc. **DEBES** presentar esta información al usuario tal como la recibes, respetando los saltos de línea para asegurar su legibilidad y dando un breve resumen explicando los resultados extraidos`,
+* **Paso 4: Presentación de Resultados.** La herramienta devolverá un texto formateado con los valores de temperatura, voltaje, potencia, etc. **DEBES** presentar esta información al usuario de forma organizada y facil de leer, utilizando saltos de línea para asegurar su legibilidad y dando un breve resumen explicando los resultados extraidos.`,
         },
         ...messages
     ];

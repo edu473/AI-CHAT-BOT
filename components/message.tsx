@@ -160,8 +160,8 @@ const PurePreviewMessage = ({
                 if (state === 'call') {
                   const { args } = toolInvocation;
 
-                  // Do not render the call for Zabbix tools
-                  if (toolName === 'getEventHistoryForHost' || toolName === 'getHostDetails') {
+                  // No renderizar la llamada para estas herramientas, ya que la IA dará una respuesta de texto.
+                  if (toolName === 'getEventHistoryForHost' || toolName === 'getHostDetails' || toolName === 'consultarValoresOpticos') {
                     return null;
                   }
 
@@ -196,8 +196,12 @@ const PurePreviewMessage = ({
                 if (state === 'result') {
                   const { result } = toolInvocation;
 
-                  // Do not render the result for Zabbix tools
-                  if (toolName === 'getEventHistoryForHost' || toolName === 'getHostDetails') {
+                  // No renderizar el resultado para estas herramientas, ya que la IA dará una respuesta de texto.
+                  if (
+                    toolName === 'getEventHistoryForHost' ||
+                    toolName === 'getHostDetails' ||
+                    toolName === 'consultarValoresOpticos'
+                  ) {
                     return null;
                   }
 
