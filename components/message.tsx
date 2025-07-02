@@ -202,7 +202,10 @@ const PurePreviewMessage = ({
                     toolName === 'getHostDetails' ||
                     toolName === 'consultarValoresOpticos' ||
                     toolName === 'consultarEstado' ||
-                    toolName === 'getEventHistory'
+                    toolName === 'getEventHistory' ||
+                    toolName === 'consultarValoresOpticosAltiplano' ||
+                    toolName === 'consultarEstatus815' ||
+                    toolName === 'consultarEstatus7750'
                   ) {
                     return null;
                   }

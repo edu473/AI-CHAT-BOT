@@ -26,6 +26,9 @@ import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { zabbix } from '@/lib/ai/tools/zabbix';
 import { simpleFibra } from '@/lib/ai/tools/simplefibra'; // ✅ Importar las herramientas de SimpleFibra
+import { altiplano } from '@/lib/ai/tools/altiplano';
+import { system815 } from '@/lib/ai/tools/815';
+import { system7750 } from '@/lib/ai/tools/7750';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
@@ -182,7 +185,7 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
     * **Ver Historial de Eventos de un Host:** Tras encontrar un host, puedo mostrarte su historial de problemas y recuperaciones.
         * *Ejemplo de uso:* "ahora muéstrame sus eventos"
 
-    * **Consultar Estado y Potencia de una ONU:** Puedo verificar el estado de conexión y los valores ópticos de una ONU usando su serial.
+    * **Consultar Estado y Potencia de una ONU:** Puedo verificar el estado de conexión y los valores ópticos de una ONU usando su serial (INTER) o su customer ID (Altiplano).
         * *Ejemplo de uso:* "valores ópticos para el serial FHTT12345678"
     \`\`\`
 
@@ -216,12 +219,19 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
 
       * **Disparador:** El usuario pide "estado", "potencia", "valores ópticos", "revisar ONU", etc.
       * **Validación de Serial (Formato GPON SN):** Un serial válido comienza con \`TPLG\`, \`FHTT\`, o \`ALCL\` seguido de 8 caracteres alfanuméricos.
+      * **Validación de customer ID:** Un customer ID valido son al menos 8 numeros consecutivos y solo pueden ser numeros.
 
   * **Paso 2: Ejecución de Herramientas según Petición**
 
       * **Caso A: El usuario proporciona un serial válido.**
 
           * **Si la petición es sobre "valores ópticos", "potencia", o una consulta general:**
+            1.  Llama a la herramienta \`getHostDetails\` con el identificador proporcionado. Si el Host pertenece al hostgroup 'Clientes FTTH POC (Caracas) - Red propia' extrae el customer ID del nombre el cual es el numero que esta seguido de ID. Si no pertenece al grupo 'Clientes FTTH POC (Caracas) - Red propia' pasar al caso B.
+            2.  Llama a \`consultarValoresOpticosAltiplano\` con el customer ID.
+            3.  Presenta el resultado de forma directa
+
+      * **Caso B: El usuario proporciona un serial válido.**
+            * **Si la petición es sobre "valores ópticos", "potencia", o una consulta general:**
             1.  Llama a \`consultarValoresOpticos\` con el serial.
             2.  Llama a \`consultarEstado\` con el mismo serial.
             3.  Espera ambos resultados y combínalos en una única respuesta estructurada (ver Paso 3).
@@ -229,15 +239,16 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
             1.  Llama solo a \`consultarEstado\`.
             2.  Presenta el resultado de forma directa.
 
-      * **Caso B: El usuario proporciona otro dato (ID de cliente, nombre).**
+      * **Caso C: El usuario proporciona otro dato (ID de cliente, nombre).**
 
-        1.  Informa al usuario: "Entendido. Primero buscaré el serial asociado a ese cliente."
+        1.  Informa al usuario: "Entendido. Primero buscaré a que sistema esta asociado ese cliente."
         2.  Llama a \`getHostDetails\` para obtener la información del host.
-        3.  De la respuesta (\`summary\`), extrae el número de serie con formato GPON SN.
+        3.  De la respuesta (\`summary\`), extrae el número de serie con formato GPON SN y el customer ID que esta seguido de ID. y el hostGroups al que pertenece.
+        4. Si el Host pertenece al hostgroup 'Clientes FTTH POC (Caracas) - Red propia' y se encuentra un customer ID valido continua con el **Caso A**
         4.  Si no se encuentra un serial válido en el \`summary\`, responde: "No pude encontrar un número de serie válido asociado a ese cliente."
-        5.  Si se encuentra el serial, informa al usuario ("Encontré el serial X. Procedo a consultar...") y continúa con el **Caso A**.
+        5.  Si se encuentra el serial, informa al usuario ("Encontré el serial X. Procedo a consultar...") y continúa con el **Caso B**.
 
-  * **Paso 3: Formato de Presentación Combinada (Óptica + Estado)**
+  * **Paso 3: Formato de Presentación Combinada (Óptica + Estado) Si no pertenece al hostgroup 'Clientes FTTH POC (Caracas) - Red propia'**
 
       * **Objetivo:** Presentar una vista unificada y fácil de leer. Usa el siguiente formato como plantilla:
 
@@ -256,6 +267,23 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
 
     **Resumen:**
     La ONU se encuentra en línea y sus niveles de potencia óptica están dentro de los rangos normales.
+
+  * **Paso 4: Formato de Presentación Si pertenece al hostgroup 'Clientes FTTH POC (Caracas) - Red propia'**
+
+      * **Objetivo:** Presentar una vista unificada y fácil de leer. Usa el siguiente formato como plantilla:
+
+    <!-- end list -->
+
+    \`\`\`
+    Aquí está el diagnóstico completo para el cliente **[CUSTOMER ID AQUÍ]**:
+
+    **Valores Ópticos:**
+    * Potencia de Recepción (RX): [Valor de RX de consultarValoresOpticos]
+    * Potencia de Transmisión (TX): [Valor de TX de consultarValoresOpticos]
+    * [Cualquier otro valor óptico relevante]
+
+    **Resumen:**
+    La ONU se encuentra en línea y sus niveles de potencia óptica están dentro de los rangos normales.[Cualquier informacion relevante a resaltar.]
     \`\`\`
 
       * Ajusta el **Resumen** según los datos. Si la potencia es anormal o el estado es "Offline", el resumen debe reflejarlo. Ejemplo: "Atención: La ONU se reporta fuera de línea y no se pudieron obtener valores ópticos." o "Alerta: La potencia de recepción es muy baja, lo que podría indicar un problema en la fibra."`,
@@ -305,6 +333,9 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
             }),
             ...zabbix,
             ...simpleFibra, // ✅ Añadir las herramientas de SimpleFibra
+            ...altiplano,
+            ...system815,
+            ...system7750,
           },
           onFinish: async ({ response }) => {
             if (!session.user?.id) {

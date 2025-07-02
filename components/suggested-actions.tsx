@@ -19,9 +19,9 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: 'Cual es el estado del cliente ID414786286?',
-      label: 'Cual es el estado?',
-      action: 'Cual es el estado del cliente ID414786286',
+      title: '¿Cual es el estado del cliente ID414786286?',
+      label: '¿Cual es el estado?',
+      action: 'Cual es el estado del cliente ID414786286?',
     },
     {
       title: 'Dame los valores opticos del cliente ID414786286',

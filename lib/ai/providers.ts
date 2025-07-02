@@ -7,7 +7,7 @@ import {
   
   export const myProvider = customProvider({
     languageModels: {
-      'chat-model': google('gemini-2.5-pro'),
+      'chat-model': google('gemini-2.5-flash'),
       'chat-model-reasoning': wrapLanguageModel({
         model: google('gemini-2.5-pro'),
         middleware: extractReasoningMiddleware({ tagName: 'think' }),
