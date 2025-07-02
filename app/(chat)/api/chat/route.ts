@@ -307,60 +307,162 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
             ...simpleFibra, // ✅ Añadir las herramientas de SimpleFibra
           },
           onFinish: async ({ response }) => {
-            if (session.user?.id) {
-              try {
-                // ✅ Validar que hay mensajes del asistente antes de procesar
-                const assistantMessages = response.messages.filter(
-                  (message) => message.role === 'assistant',
-                );
-
-                if (assistantMessages.length === 0) {
-                  console.log('No assistant messages to save, skipping.');
-                  return;
-                }
-
-                const assistantId = getTrailingMessageId({
-                  messages: assistantMessages,
-                });
-
-                if (!assistantId) {
-                  console.error('No assistant message ID found, skipping save.');
-                  return;
-                }
-
-                const [, assistantMessage] = appendResponseMessages({
-                  messages: [message],
-                  responseMessages: response.messages,
-                });
-                
-                if (!assistantMessage) {
-                  console.error('Could not construct assistant message, skipping save.');
-                  return;
-                }
-
-                // ✅ Validar que el mensaje tiene contenido válido antes de guardar
-                if (!assistantMessage.parts || assistantMessage.parts.length === 0) {
-                  console.error('Assistant message has no valid parts, skipping save.');
-                  return;
-                }
-
-                await saveMessages({
-                  messages: [
-                    {
-                      id: assistantId,
-                      chatId: id,
-                      role: assistantMessage.role,
-                      parts: assistantMessage.parts,
-                      attachments:
-                        assistantMessage.experimental_attachments ?? [],
-                      createdAt: new Date(),
-                    },
-                  ],
-                });
-              } catch (error) {
-                console.error('Failed to save chat:', error);
-                // ✅ No lanzar el error, solo logearlo para evitar que falle la respuesta
+            if (!session.user?.id) {
+              console.log('No user session, skipping message save.');
+              return;
+            }
+          
+            try {
+              console.log('=== onFinish Debug Start ===');
+              
+              // ✅ Validar que hay mensajes del asistente antes de procesar
+              const assistantMessages = response.messages.filter(
+                (message) => message.role === 'assistant',
+              );
+          
+              if (assistantMessages.length === 0) {
+                console.log('No assistant messages to save, skipping.');
+                return;
               }
+          
+              console.log('Assistant messages found:', assistantMessages.length);
+          
+              const assistantId = getTrailingMessageId({
+                messages: assistantMessages,
+              });
+          
+              if (!assistantId) {
+                console.error('No assistant message ID found, skipping save.');
+                return;
+              }
+          
+              console.log('Assistant ID found:', assistantId);
+          
+              // ✅ Construir el mensaje del asistente
+              const [, assistantMessage] = appendResponseMessages({
+                messages: [message],
+                responseMessages: response.messages,
+              });
+              
+              if (!assistantMessage) {
+                console.error('Could not construct assistant message, skipping save.');
+                return;
+              }
+          
+              console.log('Raw assistant message parts:', assistantMessage.parts);
+              console.log('Raw assistant message attachments:', assistantMessage.experimental_attachments);
+          
+              // ✅ Validar y limpiar parts - CRÍTICO: No puede ser null o undefined
+              let validParts = [];
+              
+              if (assistantMessage.parts && Array.isArray(assistantMessage.parts)) {
+                validParts = assistantMessage.parts.filter(part => {
+                  // Filtrar valores null, undefined o strings vacíos
+                  if (part === null || part === undefined) {
+                    console.warn('Filtering out null/undefined part');
+                    return false;
+                  }
+                  
+                  if (typeof part === 'string' && part.trim().length === 0) {
+                    console.warn('Filtering out empty string part');
+                    return false;
+                  }
+                  
+                  // Validar que los objetos sean serializables
+                  if (typeof part === 'object') {
+                    try {
+                      JSON.stringify(part);
+                      return true;
+                    } catch (error) {
+                      console.warn('Filtering out non-serializable object part:', error);
+                      return false;
+                    }
+                  }
+                  
+                  return true;
+                });
+              }
+          
+              // ✅ Si no hay parts válidas, crear una parte por defecto
+              if (validParts.length === 0) {
+                console.warn('No valid parts found, creating default text part');
+                validParts = [{ type: 'text', text: 'Respuesta del asistente' }];
+              }
+          
+              // ✅ Validar y limpiar attachments - CRÍTICO: No puede ser null
+              let validAttachments = [];
+              
+              if (assistantMessage.experimental_attachments && Array.isArray(assistantMessage.experimental_attachments)) {
+                validAttachments = assistantMessage.experimental_attachments.filter(attachment => {
+                  if (attachment === null || attachment === undefined) {
+                    console.warn('Filtering out null/undefined attachment');
+                    return false;
+                  }
+                  
+                  // Validar que el attachment sea serializable
+                  try {
+                    JSON.stringify(attachment);
+                    return true;
+                  } catch (error) {
+                    console.warn('Filtering out non-serializable attachment:', error);
+                    return false;
+                  }
+                });
+              }
+          
+              // ✅ Crear el mensaje con datos válidos garantizados
+              const messageToSave: DBMessage = {
+                id: assistantId,
+                chatId: id,
+                role: 'assistant',
+                parts: validParts, // Array garantizado no vacío
+                attachments: validAttachments, // Array garantizado (puede estar vacío)
+                createdAt: new Date(),
+              };
+          
+              console.log('Final message to save:', {
+                id: messageToSave.id,
+                chatId: messageToSave.chatId,
+                role: messageToSave.role,
+                partsCount: messageToSave.parts.length,
+                attachmentsCount: messageToSave.attachments.length,
+                partsPreview: messageToSave.parts.map(p => 
+                  typeof p === 'string' ? 
+                    `string(${p.length})` : 
+                    `object(${Object.keys(p).join(',')})`
+                ),
+              });
+          
+              // ✅ Validar que los datos sean serializables antes del guardado
+              try {
+                JSON.stringify(messageToSave.parts);
+                JSON.stringify(messageToSave.attachments);
+              } catch (serializationError) {
+                console.error('Data serialization failed:', serializationError);
+                throw new Error('Message contains non-serializable data');
+              }
+          
+              // ✅ Guardar el mensaje
+              await saveMessages({
+                messages: [messageToSave],
+              });
+          
+              console.log('Message saved successfully');
+              console.log('=== onFinish Debug End ===');
+          
+            } catch (error) {
+              console.error('=== onFinish Error ===');
+              console.error('Failed to save chat:', error);
+              
+              if (error instanceof Error) {
+                console.error('Error details:', {
+                  message: error.message,
+                  stack: error.stack,
+                  name: error.name
+                });
+              }
+              
+              // ✅ No lanzar el error, solo logearlo para evitar que falle la respuesta
             }
           },
           experimental_telemetry: {

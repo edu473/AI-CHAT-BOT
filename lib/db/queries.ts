@@ -214,8 +214,61 @@ export async function saveMessages({
   messages: Array<DBMessage>;
 }) {
   try {
-    return await db.insert(message).values(messages);
+    console.log('Attempting to save messages:', messages.length);
+    
+    // ✅ Validar cada mensaje antes del insert
+    const validatedMessages = messages.map((msg, index) => {
+      // Validar campos requeridos
+      if (!msg.id || !msg.chatId || !msg.role || !msg.createdAt) {
+        throw new Error(`Message ${index} missing required fields`);
+      }
+
+      // ✅ CRÍTICO: Validar que parts no sea null y sea array válido
+      if (!msg.parts || !Array.isArray(msg.parts)) {
+        throw new Error(`Message ${index} parts must be a non-empty array`);
+      }
+
+      // ✅ CRÍTICO: Validar que attachments no sea null y sea array válido
+      if (!Array.isArray(msg.attachments)) {
+        throw new Error(`Message ${index} attachments must be an array`);
+      }
+
+      // ✅ Validar que los datos sean serializables (requerido para campos JSON)
+      try {
+        JSON.stringify(msg.parts);
+        JSON.stringify(msg.attachments);
+      } catch (serializationError) {
+        throw new Error(`Message ${index} contains non-serializable data: ${serializationError}`);
+      }
+
+      console.log(`Message ${index} validated:`, {
+        id: msg.id,
+        chatId: msg.chatId,
+        role: msg.role,
+        partsCount: msg.parts.length,
+        attachmentsCount: msg.attachments.length,
+      });
+
+      return msg;
+    });
+
+    // ✅ Realizar el insert con mensajes validados
+    const result = await db.insert(message).values(validatedMessages);
+    console.log('Messages saved successfully');
+    return result;
+    
   } catch (error) {
+    console.error('Error in saveMessages:', {
+      error: error instanceof Error ? error.message : error,
+      messageCount: messages.length,
+      firstMessagePreview: messages[0] ? {
+        id: messages[0].id,
+        role: messages[0].role,
+        partsType: typeof messages[0].parts,
+        attachmentsType: typeof messages[0].attachments,
+      } : 'no messages',
+    });
+    
     throw new ChatSDKError('bad_request:database', 'Failed to save messages');
   }
 }
