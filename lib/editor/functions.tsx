@@ -1,3 +1,5 @@
+// lib/editor/functions.tsx
+
 'use client';
 
 import { defaultMarkdownSerializer } from 'prosemirror-markdown';
@@ -5,14 +7,16 @@ import { DOMParser, type Node } from 'prosemirror-model';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import { renderToString } from 'react-dom/server';
 
-import { Markdown } from '@/components/markdown';
+// CORRECCIÓN: Importa NonMemoizedMarkdown en lugar de Markdown.
+import { NonMemoizedMarkdown } from '@/components/markdown'; 
 
 import { documentSchema } from './config';
 import { createSuggestionWidget, type UISuggestion } from './suggestions';
 
 export const buildDocumentFromContent = (content: string) => {
   const parser = DOMParser.fromSchema(documentSchema);
-  const stringFromMarkdown = renderToString(<Markdown>{content}</Markdown>);
+  // Usa el componente no memorizado aquí para el renderizado del lado del servidor.
+  const stringFromMarkdown = renderToString(<NonMemoizedMarkdown>{content}</NonMemoizedMarkdown>);
   const tempContainer = document.createElement('div');
   tempContainer.innerHTML = stringFromMarkdown;
   return parser.parse(tempContainer);

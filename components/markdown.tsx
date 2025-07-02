@@ -1,13 +1,30 @@
+// components/markdown.tsx
+
 import Link from 'next/link';
 import React, { memo } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './code-block';
 
-const components: Partial<Components> = {
+const components: Components = {
   // @ts-expect-error
   code: CodeBlock,
   pre: ({ children }) => <>{children}</>,
+
+  // MODIFICACIÓN CLAVE AQUÍ
+  p: ({ node, children }) => {
+    // Si el primer hijo del párrafo es un bloque de código,
+    // no lo envuelvas en un <p>. Renderízalo directamente.
+    if (
+      node.children.length === 1 &&
+      node.children[0].type === 'element' &&
+      node.children[0].tagName === 'pre'
+    ) {
+      return <>{children}</>;
+    }
+    // Para todos los demás párrafos, usa el comportamiento normal.
+    return <p>{children}</p>;
+  },
   ol: ({ node, children, ...props }) => {
     return (
       <ol className="list-decimal list-outside ml-4" {...props}>
@@ -95,7 +112,8 @@ const components: Partial<Components> = {
 
 const remarkPlugins = [remarkGfm];
 
-const NonMemoizedMarkdown = ({ children }: { children: string }) => {
+// CAMBIO IMPORTANTE: Exporta el componente no memorizado
+export const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   return (
     <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
       {children}
@@ -103,6 +121,7 @@ const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   );
 };
 
+// Y el componente memorizado por defecto (o con un nombre diferente si lo prefieres)
 export const Markdown = memo(
   NonMemoizedMarkdown,
   (prevProps, nextProps) => prevProps.children === nextProps.children,

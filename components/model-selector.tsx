@@ -1,7 +1,7 @@
 'use client';
 
-import { startTransition, useMemo, useOptimistic, useState } from 'react';
-
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation'; // Importar useRouter
 import { saveChatModelAsCookie } from '@/app/(chat)/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { chatModels } from '@/lib/ai/models';
 import { cn } from '@/lib/utils';
-
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import type { Session } from 'next-auth';
@@ -26,22 +25,22 @@ export function ModelSelector({
   selectedModelId: string;
 } & React.ComponentProps<typeof Button>) {
   const [open, setOpen] = useState(false);
-  const [optimisticModelId, setOptimisticModelId] =
-    useOptimistic(selectedModelId);
+  const router = useRouter(); // Inicializar el router
 
-  const userType = session.user.type;
-  const { availableChatModelIds } = entitlementsByUserType[userType];
-
-  const availableChatModels = chatModels.filter((chatModel) =>
-    availableChatModelIds.includes(chatModel.id),
-  );
+  const availableChatModels = useMemo(() => {
+    const userType = session.user.type;
+    const { availableChatModelIds } = entitlementsByUserType[userType];
+    return chatModels.filter((chatModel) =>
+      availableChatModelIds.includes(chatModel.id),
+    );
+  }, [session.user.type]);
 
   const selectedChatModel = useMemo(
     () =>
       availableChatModels.find(
-        (chatModel) => chatModel.id === optimisticModelId,
+        (chatModel) => chatModel.id === selectedModelId,
       ),
-    [optimisticModelId, availableChatModels],
+    [selectedModelId, availableChatModels],
   );
 
   return (
@@ -70,15 +69,12 @@ export function ModelSelector({
             <DropdownMenuItem
               data-testid={`model-selector-item-${id}`}
               key={id}
-              onSelect={() => {
+              onSelect={async () => {
                 setOpen(false);
-
-                startTransition(() => {
-                  setOptimisticModelId(id);
-                  saveChatModelAsCookie(id);
-                });
+                await saveChatModelAsCookie(id);
+                router.refresh(); // Refrescar la página para aplicar el cambio
               }}
-              data-active={id === optimisticModelId}
+              data-active={id === selectedModelId}
               asChild
             >
               <button

@@ -271,7 +271,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
 
 ### Contexto importante:
 - Una vez que encuentres un hostid en Zabbix, úsalo para consultas de seguimiento
-- Si no encuentras en Zabbix por serial/nombre, pide Customer ID para buscar en 7750
+- Si no encuentras en Zabbix por serial/nombre, usa el Customer ID para buscar en 7750, si no lo tienes pidelo
 - Para Corteca, la MAC debe ser ajustada restando 4 al último octeto`,
         },
         ...messages
