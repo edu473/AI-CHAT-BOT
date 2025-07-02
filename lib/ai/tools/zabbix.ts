@@ -39,7 +39,7 @@ const getHostDetails = tool({
       // Devuelve un objeto con el hostid y el resumen
       return {
         hostid: hostId,
-        summary: `Host encontrado: ${hostName}\nGrupos (Zonas): ${hostGroups}\nEstado: ${problemSummary}\n\nPuedes pedirme el "historial de eventos" o "más detalles de los problemas" para este host.`
+        summary: `Host encontrado: ${hostName}\nGrupos (Zonas): ${hostGroups}\nEstado: ${problemSummary}\n\nPuedes pedirme el "historial de eventos" para este host.`
       };
 
     } catch (error: any) {
@@ -63,7 +63,7 @@ const getEventHistory = tool({
         hostids: [numericHostId],
         sortfield: ["clock"],
         sortorder: "DESC",
-        limit: 100 // Aumentamos el límite para asegurar que capturemos eventos relevantes
+        limit: 20 // Aumentamos el límite para asegurar que capturemos eventos relevantes
       });
 
       if (!events || events.length === 0) {

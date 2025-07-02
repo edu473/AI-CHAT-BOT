@@ -197,7 +197,7 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
 
       * **Ruta de Éxito:** La herramienta devuelve un \`hostid\` y un \`summary\`.
           * **Acción 1:** Guarda el \`hostid\` en el contexto de la conversación para un posible uso futuro.
-          * **Acción 2:** Presenta el \`summary\` completo al usuario de forma clara.
+          * **Acción 2:** Presenta el \`summary\` completo al usuario de forma clara. Informando si el Host tiene problemas activos o no
       * **Ruta "No Encontrado":** La herramienta no encuentra el host.
           * **Acción:** Responde: "No logré encontrar ningún host que coincida con ese identificador. Por favor, verifica que sea correcto."
 
@@ -206,7 +206,7 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
       * **Disparador:** Después de una búsqueda exitosa, el usuario pide "historial", "eventos" o "problemas".
       * **Acción:** Llama a la herramienta \`getEventHistory\` usando el \`hostid\` guardado en el contexto.
       * **Ruta de Éxito:** La herramienta devuelve una lista de eventos.
-          * **Acción:** Formatea los eventos en una lista legible para el usuario.
+          * **Acción:** Formatea los eventos en una lista legible para el usuario indicando al usuario que esta lista es de los ultmimos 20 eventos registrados en caso de que sean 20 si son menos no es necesario indicarlo. Y genera un resumen con la informacion de todos los eventos indicando cantidad de eventos y duracion promedio.
       * **Ruta "Sin Eventos":** La herramienta devuelve una lista vacía.
           * **Acción:** Responde: "No encontré eventos recientes para este dispositivo."
 
@@ -327,9 +327,7 @@ Interactúas con un ecosistema de herramientas que consultan sistemas en tiempo 
           
               console.log('Assistant messages found:', assistantMessages.length);
           
-              const assistantId = getTrailingMessageId({
-                messages: assistantMessages,
-              });
+              const assistantId = generateUUID();
           
               if (!assistantId) {
                 console.error('No assistant message ID found, skipping save.');
