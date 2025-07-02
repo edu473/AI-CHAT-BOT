@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const consultarValoresOpticosAltiplano = tool({
   description: 'Consulta los valores ópticos de una ONU (Unidad de Red Óptica) de Altiplano a través del customer ID',
   parameters: z.object({
-    cid: z.string().describe('El customer id del cliente. Por ejemplo: "4567890".'),
+    cid: z.string().describe('El customer id del cliente. Solo valores numericos. Por ejemplo: "4567890".'),
   }),
   execute: async ({ cid }) => {
     try {

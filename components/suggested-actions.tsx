@@ -34,9 +34,9 @@ function PureSuggestedActions({
       action: `¿Que herramientas tienes disponibles?`,
     },
     {
-      title: 'Altiplano proximamente',
-      label: 'No funcional aun',
-      action: 'What is the weather in San Francisco?',
+      title: 'Diagnostico completo cliente 416572185',
+      label: 'Diagnostico',
+      action: 'Dame un diagnostico completo del cliente 416572185',
     },
   ];
 

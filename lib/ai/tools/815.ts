@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const consultarEstatus815 = tool({
   description: 'Consulta el estado y los detalles de un cliente en el sistema 815 utilizando su Customer ID.',
   parameters: z.object({
-    customerID: z.string().describe('El Customer ID del cliente a consultar. Por ejemplo: "1234567".'),
+    customerID: z.string().describe('El Customer ID del cliente a consultar solo valor numerico. Por ejemplo: "1234567".'),
   }),
   execute: async ({ customerID }) => {
     try {
