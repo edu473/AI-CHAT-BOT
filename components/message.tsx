@@ -200,7 +200,8 @@ const PurePreviewMessage = ({
                   if (
                     toolName === 'getEventHistoryForHost' ||
                     toolName === 'getHostDetails' ||
-                    toolName === 'consultarValoresOpticos'
+                    toolName === 'consultarValoresOpticos' ||
+                    toolName === 'consultarEstado'
                   ) {
                     return null;
                   }

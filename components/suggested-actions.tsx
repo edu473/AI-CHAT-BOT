@@ -24,14 +24,14 @@ function PureSuggestedActions({
       action: 'Cual es el estado del cliente ID414786286',
     },
     {
-      title: 'Dame el historial de eventos del cliente ID414786286',
-      label: `Historial de eventos`,
-      action: `Historial de eventos del cliente ID414786286`,
+      title: 'Dame los valores opticos del cliente ID414786286',
+      label: `Valores opticos`,
+      action: `Dame los valores opticos del cliente ID414786286`,
     },
     {
-      title: 'Corteca proximamente',
-      label: `No funcional aun`,
-      action: `Help me write an essay about silicon valley`,
+      title: '¿Que herramientas tienes disponibles?',
+      label: `Herramientas disponibles`,
+      action: `¿Que herramientas tienes disponibles?`,
     },
     {
       title: 'Altiplano proximamente',
