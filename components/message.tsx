@@ -205,7 +205,8 @@ const PurePreviewMessage = ({
                     toolName === 'getEventHistory' ||
                     toolName === 'consultarValoresOpticosAltiplano' ||
                     toolName === 'consultarEstatus815' ||
-                    toolName === 'consultarEstatus7750'
+                    toolName === 'consultarEstatus7750' ||
+                    toolName === 'performCortecaDiagnostic'
                   ) {
                     return null;
                   }
