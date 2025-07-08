@@ -1,6 +1,5 @@
 import {
   appendClientMessage,
-  appendResponseMessages,
   createDataStream,
   streamText,
   type CoreMessage,
@@ -18,14 +17,14 @@ import {
   saveMessages,
   type DBMessage,
 } from '@/lib/db/queries';
-import { generateUUID, getTrailingMessageId } from '@/lib/utils';
+import { generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '@/app/(chat)/actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
 import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { zabbix } from '@/lib/ai/tools/zabbix';
-import { simpleFibra } from '@/lib/ai/tools/simplefibra'; // ✅ Importar las herramientas de SimpleFibra
+import { simpleFibra } from '@/lib/ai/tools/simplefibra';
 import { altiplano } from '@/lib/ai/tools/altiplano';
 import { system815 } from '@/lib/ai/tools/815';
 import { system7750 } from '@/lib/ai/tools/7750';
@@ -71,7 +70,6 @@ function convertToUIMessages(messages: Array<DBMessage>): Array<UIMessage> {
     id: message.id,
     parts: message.parts as UIMessage['parts'],
     role: message.role as UIMessage['role'],
-    // Note: content will soon be deprecated in @ai-sdk/react
     content: '',
     createdAt: message.createdAt,
     experimental_attachments:
@@ -323,161 +321,36 @@ Cuando el usuario pregunte qué puedes hacer, responde:
             ...system7750,
             ...corteca, 
           },
-          onFinish: async ({ response }) => {
+          onFinish: async ({ text, toolCalls, toolResults }) => {
             if (!session.user?.id) {
               console.log('No user session, skipping message save.');
               return;
             }
           
             try {
-              console.log('=== onFinish Debug Start ===');
-              
-              // ✅ Validar que hay mensajes del asistente antes de procesar
-              const assistantMessages = response.messages.filter(
-                (message) => message.role === 'assistant',
-              );
-          
-              if (assistantMessages.length === 0) {
-                console.log('No assistant messages to save, skipping.');
-                return;
-              }
-          
-              console.log('Assistant messages found:', assistantMessages.length);
-          
-              const assistantId = generateUUID();
-          
-              if (!assistantId) {
-                console.error('No assistant message ID found, skipping save.');
-                return;
-              }
-          
-              console.log('Assistant ID found:', assistantId);
-          
-              // ✅ Construir el mensaje del asistente
-              const [, assistantMessage] = appendResponseMessages({
-                messages: [message],
-                responseMessages: response.messages,
-              });
-              
-              if (!assistantMessage) {
-                console.error('Could not construct assistant message, skipping save.');
-                return;
-              }
-          
-              console.log('Raw assistant message parts:', assistantMessage.parts);
-              console.log('Raw assistant message attachments:', assistantMessage.experimental_attachments);
-          
-              // ✅ Validar y limpiar parts - CRÍTICO: No puede ser null o undefined
-              let validParts = [];
-              
-              if (assistantMessage.parts && Array.isArray(assistantMessage.parts)) {
-                validParts = assistantMessage.parts.filter(part => {
-                  // Filtrar valores null, undefined o strings vacíos
-                  if (part === null || part === undefined) {
-                    console.warn('Filtering out null/undefined part');
-                    return false;
-                  }
-                  
-                  if (typeof part === 'string' && part.trim().length === 0) {
-                    console.warn('Filtering out empty string part');
-                    return false;
-                  }
-                  
-                  // Validar que los objetos sean serializables
-                  if (typeof part === 'object') {
-                    try {
-                      JSON.stringify(part);
-                      return true;
-                    } catch (error) {
-                      console.warn('Filtering out non-serializable object part:', error);
-                      return false;
-                    }
-                  }
-                  
-                  return true;
-                });
-              }
-          
-              // ✅ Si no hay parts válidas, crear una parte por defecto
-              if (validParts.length === 0) {
-                console.warn('No valid parts found, creating default text part');
-                validParts = [{ type: 'text', text: 'Respuesta del asistente' }];
-              }
-          
-              // ✅ Validar y limpiar attachments - CRÍTICO: No puede ser null
-              let validAttachments = [];
-              
-              if (assistantMessage.experimental_attachments && Array.isArray(assistantMessage.experimental_attachments)) {
-                validAttachments = assistantMessage.experimental_attachments.filter(attachment => {
-                  if (attachment === null || attachment === undefined) {
-                    console.warn('Filtering out null/undefined attachment');
-                    return false;
-                  }
-                  
-                  // Validar que el attachment sea serializable
-                  try {
-                    JSON.stringify(attachment);
-                    return true;
-                  } catch (error) {
-                    console.warn('Filtering out non-serializable attachment:', error);
-                    return false;
-                  }
-                });
-              }
-          
-              // ✅ Crear el mensaje con datos válidos garantizados
-              const messageToSave: DBMessage = {
-                id: assistantId,
+              const assistantMessage: DBMessage = {
+                id: generateUUID(),
                 chatId: id,
                 role: 'assistant',
-                parts: validParts, // Array garantizado no vacío
-                attachments: validAttachments, // Array garantizado (puede estar vacío)
                 createdAt: new Date(),
+                parts: [
+                  ...(text ? [{ type: 'text', text }] : []),
+                  ...(toolCalls?.map(tc => ({ type: 'tool-call' as const, toolCall: tc })) ?? []),
+                  ...(toolResults?.map(tr => ({ type: 'tool-result' as const, toolResult: tr })) ?? []),
+                ],
+                attachments: [],
               };
-          
-              console.log('Final message to save:', {
-                id: messageToSave.id,
-                chatId: messageToSave.chatId,
-                role: messageToSave.role,
-                partsCount: messageToSave.parts.length,
-                attachmentsCount: messageToSave.attachments.length,
-                partsPreview: messageToSave.parts.map(p => 
-                  typeof p === 'string' ? 
-                    `string(${p.length})` : 
-                    `object(${Object.keys(p).join(',')})`
-                ),
-              });
-          
-              // ✅ Validar que los datos sean serializables antes del guardado
-              try {
-                JSON.stringify(messageToSave.parts);
-                JSON.stringify(messageToSave.attachments);
-              } catch (serializationError) {
-                console.error('Data serialization failed:', serializationError);
-                throw new Error('Message contains non-serializable data');
+
+              if (assistantMessage.parts.length === 0) {
+                console.log("No content generated by assistant, skipping save.");
+                return;
               }
           
-              // ✅ Guardar el mensaje
-              await saveMessages({
-                messages: [messageToSave],
-              });
-          
-              console.log('Message saved successfully');
-              console.log('=== onFinish Debug End ===');
+              await saveMessages({ messages: [assistantMessage] });
+              console.log('Assistant message saved successfully.');
           
             } catch (error) {
-              console.error('=== onFinish Error ===');
-              console.error('Failed to save chat:', error);
-              
-              if (error instanceof Error) {
-                console.error('Error details:', {
-                  message: error.message,
-                  stack: error.stack,
-                  name: error.name
-                });
-              }
-              
-              // ✅ No lanzar el error, solo logearlo para evitar que falle la respuesta
+              console.error('Failed to save chat onFinish:', error);
             }
           },
           experimental_telemetry: {
