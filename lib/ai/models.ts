@@ -17,4 +17,9 @@ export const chatModels: Array<ChatModel> = [
     name: 'Reasoning model',
     description: 'Uses advanced reasoning',
   },
+  {
+    id: 'chat-model-azure-o4-mini',
+    name: 'Azure OpenAI o4-mini',
+    description: 'Azure OpenAI o4-mini model for enhanced performance',
+  },
 ];
