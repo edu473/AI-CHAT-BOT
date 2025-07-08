@@ -19,7 +19,7 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: '¿Cual es el estado del cliente ID414786286?',
+      title: '¿Cual es el estado del cliente con el ID414786286?',
       label: '¿Cual es el estado?',
       action: 'Cual es el estado del cliente ID414786286?',
     },
@@ -34,7 +34,7 @@ function PureSuggestedActions({
       action: `¿Que herramientas tienes disponibles?`,
     },
     {
-      title: 'Diagnostico completo cliente 416572185',
+      title: 'Diagnostico completo del cliente 416572185',
       label: 'Diagnostico',
       action: 'Dame un diagnostico completo del cliente 416572185',
     },
