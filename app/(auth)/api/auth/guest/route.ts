@@ -20,7 +20,8 @@ export async function GET(request: Request) {
   await signIn('guest', { ...guestUser, redirect: false });
 
   const session = await auth();
-  const absoluteRedirectUrl = new URL(redirectUrl, origin).toString();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
+  const absoluteRedirectUrl = new URL(redirectUrl, appUrl).toString();
   const response = NextResponse.redirect(absoluteRedirectUrl);
 
   if (session) {
