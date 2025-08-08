@@ -16,8 +16,8 @@ import {
   getMessagesByChatId,
   saveChat,
   saveMessages,
-  type DBMessage,
 } from '@/lib/db/queries';
+import type { DBMessage } from '@/lib/db/schema'; 
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '@/app/(chat)/actions';
 import { createDocument } from '@/lib/ai/tools/create-document';
@@ -273,7 +273,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
 - Si no encuentras en Zabbix por serial/nombre, usa el Customer ID para buscar en 7750, si no lo tienes pidelo
 - Para Corteca, la MAC debe ser ajustada restando 4 al último octeto con excepcion de si termina en 0 no se debe restar`,
         },
-        ...messages
+        ...messages.filter((msg) => msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system') as CoreMessage[],
     ];
 
 
@@ -368,7 +368,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
               console.log('Raw assistant message attachments:', assistantMessage.experimental_attachments);
           
               // ✅ Validar y limpiar parts - CRÍTICO: No puede ser null o undefined
-              let validParts = [];
+              let validParts: UIMessage['parts'] = [];
               
               if (assistantMessage.parts && Array.isArray(assistantMessage.parts)) {
                 validParts = assistantMessage.parts.filter(part => {
@@ -378,7 +378,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
                     return false;
                   }
                   
-                  if (typeof part === 'string' && part.trim().length === 0) {
+                  if (part.type === 'text' && part.text.trim().length === 0) {
                     console.warn('Filtering out empty string part');
                     return false;
                   }
@@ -405,7 +405,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
               }
           
               // ✅ Validar y limpiar attachments - CRÍTICO: No puede ser null
-              let validAttachments = [];
+              let validAttachments: Attachment[] = [];
               
               if (assistantMessage.experimental_attachments && Array.isArray(assistantMessage.experimental_attachments)) {
                 validAttachments = assistantMessage.experimental_attachments.filter(attachment => {
@@ -431,7 +431,7 @@ Cuando el usuario pregunte qué puedes hacer, responde:
                 chatId: id,
                 role: 'assistant',
                 parts: validParts, // Array garantizado no vacío
-                attachments: validAttachments, // Array garantizado (puede estar vacío)
+                attachments: validAttachments as any, // Array garantizado (puede estar vacío)
                 createdAt: new Date(),
               };
           
@@ -439,12 +439,12 @@ Cuando el usuario pregunte qué puedes hacer, responde:
                 id: messageToSave.id,
                 chatId: messageToSave.chatId,
                 role: messageToSave.role,
-                partsCount: messageToSave.parts.length,
-                attachmentsCount: messageToSave.attachments.length,
-                partsPreview: messageToSave.parts.map(p => 
+                partsCount: (messageToSave.parts as any[]).length,
+                attachmentsCount: (messageToSave.attachments as any[]).length,
+                partsPreview: (messageToSave.parts as any[]).map((p: any) => 
                   typeof p === 'string' ? 
                     `string(${p.length})` : 
-                    `object(${Object.keys(p).join(',')})`
+                    (typeof p === 'object' && p !== null ? `object(${Object.keys(p).join(',')})` : 'unknown')
                 ),
               });
           

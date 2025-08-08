@@ -16,6 +16,7 @@ const components: Components = {
     // Si el primer hijo del párrafo es un bloque de código,
     // no lo envuelvas en un <p>. Renderízalo directamente.
     if (
+      node &&
       node.children.length === 1 &&
       node.children[0].type === 'element' &&
       node.children[0].tagName === 'pre'
