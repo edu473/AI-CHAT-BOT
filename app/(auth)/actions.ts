@@ -1,10 +1,10 @@
 'use server';
 
 import { z } from 'zod';
-
-import { createUser, getUser } from '@/lib/db/queries';
-
+import { auth } from './auth';
+import { getUser, updateUserPassword } from '@/lib/db/queries';
 import { signIn } from './auth';
+import { revalidatePath } from 'next/cache';
 
 const authFormSchema = z.object({
   email: z.string().email(),
@@ -41,44 +41,37 @@ export const login = async (
   }
 };
 
-export interface RegisterActionState {
-  status:
-    | 'idle'
-    | 'in_progress'
-    | 'success'
-    | 'failed'
-    | 'user_exists'
-    | 'invalid_data';
+const changePasswordFormSchema = z.object({
+  password: z.string().min(6),
+});
+
+export interface ChangePasswordActionState {
+    status: 'idle' | 'success' | 'failed' | 'invalid_data';
 }
 
-export const register = async (
-  _: RegisterActionState,
-  formData: FormData,
-): Promise<RegisterActionState> => {
-  try {
-    const validatedData = authFormSchema.parse({
-      email: formData.get('email'),
-      password: formData.get('password'),
-    });
+export const changePassword = async (
+    _: ChangePasswordActionState,
+    formData: FormData,
+): Promise<ChangePasswordActionState> => {
+    try {
+        const validatedData = changePasswordFormSchema.parse({
+            password: formData.get('password'),
+        });
 
-    const [user] = await getUser(validatedData.email);
+        const session = await auth();
+        if (!session?.user?.email) {
+            return { status: 'failed' };
+        }
 
-    if (user) {
-      return { status: 'user_exists' } as RegisterActionState;
+        await updateUserPassword(session.user.email, validatedData.password);
+        
+        revalidatePath('/');
+        return { status: 'success' };
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return { status: 'invalid_data' };
+        }
+
+        return { status: 'failed' };
     }
-    await createUser(validatedData.email, validatedData.password);
-    await signIn('credentials', {
-      email: validatedData.email,
-      password: validatedData.password,
-      redirect: false,
-    });
-
-    return { status: 'success' };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return { status: 'invalid_data' };
-    }
-
-    return { status: 'failed' };
-  }
-};
+}

@@ -80,6 +80,15 @@ export async function createGuestUser() {
   }
 }
 
+export async function updateUserPassword(email: string, password: string): Promise<void> {
+    const hashedPassword = generateHashedPassword(password);
+    try {
+        await db.update(user).set({ password: hashedPassword }).where(eq(user.email, email));
+    } catch (error) {
+        throw new ChatSDKError('bad_request:database', 'Failed to update user password');
+    }
+}
+
 export async function saveChat({
   id,
   userId,

@@ -1,50 +1,38 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useActionState, useEffect, useState } from 'react';
 import { toast } from '@/components/toast';
-
 import { AuthForm } from '@/components/auth-form';
 import { SubmitButton } from '@/components/submit-button';
-
 import { login, type LoginActionState } from '../actions';
-import { useSession } from 'next-auth/react';
 
 export default function Page() {
   const router = useRouter();
-
   const [email, setEmail] = useState('');
   const [isSuccessful, setIsSuccessful] = useState(false);
 
   const [state, formAction] = useActionState<LoginActionState, FormData>(
     login,
-    {
-      status: 'idle',
-    },
+    { status: 'idle' },
   );
-
-  const { update: updateSession } = useSession();
 
   useEffect(() => {
     if (state.status === 'failed') {
-      toast({
-        type: 'error',
-        description: 'Invalid credentials!',
-      });
+      toast({ type: 'error', description: 'Credenciales inválidas.' });
+      setIsSuccessful(false); 
     } else if (state.status === 'invalid_data') {
-      toast({
-        type: 'error',
-        description: 'Failed validating your submission!',
-      });
+      toast({ type: 'error', description: 'Error al validar los datos.' });
+       setIsSuccessful(false);
     } else if (state.status === 'success') {
       setIsSuccessful(true);
-      updateSession();
-      router.refresh();
+      // Simplemente redirigimos. La sesión ya fue actualizada en el servidor.
+      router.push('/');
     }
-  }, [state.status]);
+  }, [state, router]);
 
   const handleSubmit = (formData: FormData) => {
+    if (isSuccessful) return; 
     setEmail(formData.get('email') as string);
     formAction(formData);
   };
@@ -55,21 +43,11 @@ export default function Page() {
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
           <h3 className="text-xl font-semibold dark:text-zinc-50">Sign In</h3>
           <p className="text-sm text-gray-500 dark:text-zinc-400">
-            Use your email and password to sign in
+            Usa tu email y contraseña para iniciar sesión
           </p>
         </div>
         <AuthForm action={handleSubmit} defaultEmail={email}>
           <SubmitButton isSuccessful={isSuccessful}>Sign in</SubmitButton>
-          <p className="text-center text-sm text-gray-600 mt-4 dark:text-zinc-400">
-            {"Don't have an account? "}
-            <Link
-              href="/register"
-              className="font-semibold text-gray-800 hover:underline dark:text-zinc-200"
-            >
-              Sign up
-            </Link>
-            {' for free.'}
-          </p>
         </AuthForm>
       </div>
     </div>
