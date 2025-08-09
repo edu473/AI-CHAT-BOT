@@ -20,10 +20,6 @@ import {
 import type { DBMessage } from '@/lib/db/schema'; 
 import { generateUUID, getTrailingMessageId } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '@/app/(chat)/actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
-import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
 import { zabbix } from '@/lib/ai/tools/zabbix';
 import { simpleFibra } from '@/lib/ai/tools/simplefibra'; // ✅ Importar las herramientas de SimpleFibra
 import { altiplano } from '@/lib/ai/tools/altiplano';
@@ -310,13 +306,6 @@ export async function POST(request: Request) {
             messages: messagesWithSystemPrompt,
             maxSteps: 5,
             tools: {
-              getWeather,
-              createDocument: createDocument({ session, dataStream }),
-              updateDocument: updateDocument({ session, dataStream }),
-              requestSuggestions: requestSuggestions({
-                session,
-                dataStream,
-              }),
               ...zabbix,
               ...simpleFibra,
               ...altiplano,

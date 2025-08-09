@@ -19,14 +19,14 @@ function PureSuggestedActions({
 }: SuggestedActionsProps) {
   const suggestedActions = [
     {
-      title: '¿Cual es el estado del cliente con el ID414786286?',
+      title: '¿Cual es el estado del cliente con el ID426263934?',
       label: '¿Cual es el estado?',
-      action: 'Cual es el estado del cliente ID414786286?',
+      action: 'Cual es el estado del cliente ID426263934?',
     },
     {
-      title: 'Dame los valores opticos del cliente ID414786286',
+      title: 'Dame los valores opticos del cliente ID425950629',
       label: `Valores opticos`,
-      action: `Dame los valores opticos del cliente ID414786286`,
+      action: `Dame los valores opticos del cliente ID425950629`,
     },
     {
       title: '¿Que herramientas tienes disponibles?',
@@ -34,9 +34,9 @@ function PureSuggestedActions({
       action: `¿Que herramientas tienes disponibles?`,
     },
     {
-      title: 'Diagnostico completo del cliente 416572185',
+      title: 'Diagnostico completo del cliente 425935777',
       label: 'Diagnostico',
-      action: 'Dame un diagnostico completo del cliente 416572185',
+      action: 'Dame un diagnostico completo del cliente 425935777',
     },
   ];
 
