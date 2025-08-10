@@ -18,7 +18,7 @@ export const performCortecaDiagnostic = tool({
   }),
   execute: async ({ macAddress }) => {
     try {
-      const flaskApiUrl = process.env.FLASK_API_URL || 'http://127.0.0.1:3000';
+      const flaskApiUrl = process.env.FLASK_API_URL || 'http://172.20.0.10:3000';
       
       // Realiza la llamada POST a tu endpoint /submitcorteca en Flask
       const formData = new FormData();
