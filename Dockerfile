@@ -16,9 +16,6 @@ RUN pnpm install --frozen-lockfile
 # Copia el resto del código de la aplicación
 COPY . .
 
-# Ejecuta las migraciones de la base de datos
-RUN pnpm db:migrate
-
 # Construye la aplicación Next.js
 RUN pnpm build
 
