@@ -17,7 +17,7 @@ export const consultarEstatus7750 = tool({
       formData.append('CID', customerID);
 
       // La URL de tu backend de Flask. Es recomendable usar una variable de entorno para esto.
-      const flaskApiUrl = process.env.FLASK_API_URL || 'http://172.20.0.10:3000/submitnokia';
+      const flaskApiUrl = process.env.FLASK_API_URL_7750 || 'http://172.20.0.10:3000/submitnokia';
 
       const response = await fetch(flaskApiUrl, {
         method: 'POST',

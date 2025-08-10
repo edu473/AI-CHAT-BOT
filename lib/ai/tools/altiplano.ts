@@ -17,7 +17,7 @@ export const consultarValoresOpticosAltiplano = tool({
       formData.append('CID', cid);
 
       // La URL de tu backend de Flask. Es recomendable usar una variable de entorno para esto.
-      const flaskApiUrl = process.env.FLASK_API_URL || 'http://172.20.0.10:3000/submitaltiplano';
+      const flaskApiUrl = process.env.FLASK_API_URL_altiplano || 'http://172.20.0.10:3000/submitaltiplano';
 
       const response = await fetch(flaskApiUrl, {
         method: 'POST',

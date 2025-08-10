@@ -56,7 +56,7 @@ export const consultarEstado = tool({
       formData.append('action', 'Action5');
       formData.append('serial', serial);
 
-      const flaskApiUrl = process.env.FLASK_API_URL || 'http://172.20.0.10:3000/submit';
+      const flaskApiUrl = process.env.FLASK_API_URL_simplefibra || 'http://172.20.0.10:3000/submit';
 
       const response = await fetch(flaskApiUrl, {
         method: 'POST',
