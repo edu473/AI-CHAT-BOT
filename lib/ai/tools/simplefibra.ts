@@ -17,7 +17,7 @@ export const consultarValoresOpticos = tool({
       formData.append('serial', serial);
 
       // La URL de tu backend de Flask. Es recomendable usar una variable de entorno para esto.
-      const flaskApiUrl = process.env.FLASK_API_URL || 'http://127.0.0.1:3000/submit';
+      const flaskApiUrl = process.env.FLASK_API_URL_simplefibra || 'http://127.0.0.1:3000/submit';
 
       const response = await fetch(flaskApiUrl, {
         method: 'POST',

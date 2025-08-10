@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:13-alpine
@@ -43,7 +41,8 @@ services:
   edusoft:
     image: edu473/edusoft:ai-latest
     container_name: edusoft
-    command: ["/bin/sh", "-c", "sleep 1d"]
+    env_file:
+      - .env.edusoft
     networks:
       my_network:
         ipv4_address: 172.20.0.10
