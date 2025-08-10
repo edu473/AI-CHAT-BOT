@@ -16,26 +16,34 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    restart: always
+    networks:
+      - my_network
+    ports:
+      - "6379:6379"
+
   ai-chat-bot:
-    # Cambiado de 'build: .' a 'image:' para usar la imagen de Docker Hub
-    image: tu-usuario-de-dockerhub/ai-chat-bot:latest
+    image: edu473/ai-chat-bot:latest
     container_name: ai-chat-bot
-    # Ejecuta la migración y luego inicia la aplicación
     command: /bin/sh -c "pnpm db:migrate && pnpm start"
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - my_network
     env_file:
       - .env.local
     depends_on:
       - postgres
+      - redis
       - edusoft
 
   edusoft:
-    # Cambiado para usar la imagen de Docker Hub
-    image: tu-usuario-de-dockerhub/edusoft:latest
+    image: edu473/edusoft:ai-latest
     container_name: edusoft
+    command: ["/bin/sh", "-c", "sleep 1d"]
     networks:
       my_network:
         ipv4_address: 172.20.0.10
