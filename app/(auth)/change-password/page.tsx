@@ -1,0 +1,69 @@
+'use client';
+
+import { useActionState, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Form from 'next/form';
+import Link from 'next/link';
+import { toast } from '@/components/toast';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { SubmitButton } from '@/components/submit-button';
+import { Button } from '@/components/ui/button';
+import { changePassword, type ChangePasswordActionState } from '../actions';
+
+export default function ChangePasswordPage() {
+  const router = useRouter();
+  const [isSuccessful, setIsSuccessful] = useState(false);
+
+  const [state, formAction] = useActionState<ChangePasswordActionState, FormData>(
+    changePassword,
+    { status: 'idle' },
+  );
+
+  useEffect(() => {
+    if (state.status === 'success') {
+      toast({ type: 'success', description: 'Contraseña actualizada exitosamente.' });
+      setIsSuccessful(true);
+      setTimeout(() => router.push('/'), 1000);
+    } else if (state.status === 'failed') {
+      toast({ type: 'error', description: 'No se pudo actualizar la contraseña.' });
+    } else if (state.status === 'invalid_data') {
+      toast({ type: 'error', description: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+  }, [state, router]);
+
+  return (
+    <div className="flex h-dvh w-screen items-start pt-12 md:pt-0 md:items-center justify-center bg-background">
+      <div className="w-full max-w-md overflow-hidden rounded-2xl flex flex-col gap-12">
+        <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
+          <h3 className="text-xl font-semibold dark:text-zinc-50">Cambiar Contraseña</h3>
+          <p className="text-sm text-gray-500 dark:text-zinc-400">
+            Ingresa tu nueva contraseña.
+          </p>
+        </div>
+        <Form action={formAction} className="flex flex-col gap-4 px-4 sm:px-16">
+          <div className="flex flex-col gap-2">
+            <Label
+              htmlFor="password"
+              className="text-zinc-600 font-normal dark:text-zinc-400"
+            >
+              Nueva Contraseña
+            </Label>
+            <Input
+              id="password"
+              name="password"
+              className="bg-muted text-md md:text-sm"
+              type="password"
+              required
+              autoFocus
+            />
+          </div>
+          <SubmitButton isSuccessful={isSuccessful}>Actualizar Contraseña</SubmitButton>
+          <Button variant="ghost" asChild>
+            <Link href="/">Volver</Link>
+          </Button>
+        </Form>
+      </div>
+    </div>
+  );
+}
