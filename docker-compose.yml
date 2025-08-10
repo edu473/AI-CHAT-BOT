@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - my_network
+    ports:
+      - "5432:5432"
+
+  ai-chat-bot:
+    # Cambiado de 'build: .' a 'image:' para usar la imagen de Docker Hub
+    image: tu-usuario-de-dockerhub/ai-chat-bot:latest
+    container_name: ai-chat-bot
+    # Ejecuta la migración y luego inicia la aplicación
+    command: /bin/sh -c "pnpm db:migrate && pnpm start"
+    ports:
+      - "3000:3000"
+    networks:
+      - my_network
+    env_file:
+      - .env.local
+    depends_on:
+      - postgres
+      - edusoft
+
+  edusoft:
+    # Cambiado para usar la imagen de Docker Hub
+    image: tu-usuario-de-dockerhub/edusoft:latest
+    container_name: edusoft
+    networks:
+      my_network:
+        ipv4_address: 172.20.0.10
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
