@@ -6,7 +6,7 @@ import { z } from 'zod';
  * Esta herramienta se comunica con un backend de Flask para obtener los datos.
  */
 export const consultarValoresOpticos = tool({
-  description: 'Consulta los valores ópticos de una ONU (Unidad de Red Óptica) a través de su número de serie.',
+  description: 'Consulta los valores ópticos (potencia de recepción/transmisión) de una ONU en la red de INTER (Red Alquilada). Se usa cuando el `hostgroup` de Zabbix NO contiene "Red propia" O cuando en 7750 el nombre de la OLT empieza por `HUB-`. Requiere el número de serie de la ONU. Formatos validos para el Serial: TPLG00000000, FHTT00000000, o ALCL00000000 (prefijo + 8 caracteres)',
   parameters: z.object({
     serial: z.string().describe('El número de serie de la ONU a consultar. Por ejemplo: "FHTT12345678".'),
   }),
@@ -46,7 +46,7 @@ export const consultarValoresOpticos = tool({
  * Esta herramienta se comunica con un backend de Flask para obtener los datos.
  */
 export const consultarEstado = tool({
-  description: 'Consulta el estado de una ONU (Unidad de Red Óptica) a través de su número de serie.',
+  description: 'Consulta el estado general de una ONU en la red de INTER (Red Alquilada). Útil para verificar si el equipo está online. Requiere el número de serie de la ONU. Formatos validos para el Serial: TPLG00000000, FHTT00000000, o ALCL00000000 (prefijo + 8 caracteres)',
   parameters: z.object({
     serial: z.string().describe('El número de serie de la ONU para consultar su estado. Por ejemplo: "FHTT12345678".'),
   }),

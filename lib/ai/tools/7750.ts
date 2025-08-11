@@ -6,7 +6,7 @@ import { z } from 'zod';
  * Esta herramienta se comunica con un backend de Flask para obtener los datos.
  */
 export const consultarEstatus7750 = tool({
-  description: 'Consulta el estado y los detalles de un cliente en el sistema 7750 (Nokia) utilizando su Customer ID.',
+  description: 'Consulta el estado y detalles de un cliente en el router 7750 (Nokia). Se utiliza para clientes que NO se encuentran en Zabbix. Requiere el Customer ID numérico. Puede proporcionar la MAC de la ONT para el diagnóstico de Corteca.',
   parameters: z.object({
     customerID: z.string().describe('El Customer ID del cliente a consultar. Solo valor numerico. Por ejemplo: "12345678".'),
   }),

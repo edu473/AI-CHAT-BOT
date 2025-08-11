@@ -5,7 +5,7 @@ import { z } from 'zod';
  * Define la herramienta para consultar el estado de un cliente en el sistema 815.
  */
 export const consultarEstatus815 = tool({
-  description: 'Consulta el estado y los detalles de un cliente en el sistema 815 utilizando su Customer ID.',
+  description: 'Consulta el estado y detalles de un cliente en el router 815. Es útil para obtener la MAC de la ONT y otros datos de conexión. Se utiliza para clientes tanto en Red Propia como Alquilada que están en Zabbix. Requiere el Customer ID numérico.',
   parameters: z.object({
     customerID: z.string().describe('El Customer ID del cliente a consultar solo valor numerico. Por ejemplo: "1234567".'),
   }),

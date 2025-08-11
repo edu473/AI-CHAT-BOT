@@ -6,7 +6,7 @@ import { z } from 'zod';
  * Esta herramienta se comunica con un backend de Flask para obtener los datos.
  */
 export const consultarValoresOpticosAltiplano = tool({
-  description: 'Consulta los valores ópticos de una ONU (Unidad de Red Óptica) de Altiplano a través del customer ID',
+  description: 'Consulta los valores ópticos de una ONU en la Red Propia (Altiplano). Se usa cuando el `hostgroup` de Zabbix contiene "Red propia" o aparece en 7750 el nombre de la OLT empieza distinto a `HUB-`. Requiere el Customer ID numérico (ej: "4567890").',
   parameters: z.object({
     cid: z.string().describe('El customer id del cliente. Solo valores numericos. Por ejemplo: "4567890".'),
   }),

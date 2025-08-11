@@ -12,7 +12,7 @@ import { z } from 'zod';
  * por ese tiempo.
  */
 export const performCortecaDiagnostic = tool({
-  description: 'Realiza un diagnóstico de Wi-Fi en el sistema Corteca para una dirección MAC específica y devuelve el resultado del diagnóstico.',
+  description: 'Realiza un diagnóstico avanzado de Wi-Fi para ONTs Nokia (serial empieza con "ALCL"). PRE-REQUISITO: Esta herramienta REQUIERE una dirección MAC. Debes obtenerla primero usando `consultarEstatus815` o `consultarEstatus7750`. Una vez obtenida la MAC, AJÚSTALA: resta 4 al último octeto y formatéala a MAYÚSCULAS con guiones (ej: "00-1A-2B-3C-4D-5E"). Informa al usuario que la operación tarda ~1 minuto. IGNORA los resultados de speedtest y latencia.',
   parameters: z.object({
     macAddress: z.string().describe('La dirección MAC completa para la cual se desea realizar el diagnóstico, debe ser siempre en mayuscula y separado por "-". Ejemplo: "00-1A-2B-3C-4D-5E".'),
   }),

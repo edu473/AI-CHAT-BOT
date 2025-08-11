@@ -34,9 +34,9 @@ function PureSuggestedActions({
       action: `¿Que herramientas tienes disponibles?`,
     },
     {
-      title: 'Diagnostico completo del cliente 425935777',
+      title: 'Diagnostico de corteca del cliente 418462486',
       label: 'Diagnostico',
-      action: 'Dame un diagnostico completo del cliente 425935777',
+      action: 'Dame un diagnostico de corteca para el cliente 425935777',
     },
   ];
 
