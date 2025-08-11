@@ -3,7 +3,8 @@
 import { ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import type { User } from 'next-auth';
-import { signOut, useSession } from 'next-auth/react';
+// signOut ahora se importa desde 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'; 
 import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
@@ -84,23 +85,23 @@ export function SidebarUserNav({ user }: { user: User }) {
               <button
                 type="button"
                 className="w-full cursor-pointer"
-                onClick={() => {
+                onClick={async () => { // <--- La lógica ahora es async
                   if (status === 'loading') {
                     toast({
                       type: 'error',
                       description:
                         'Verificando estado de autenticación, por favor intente de nuevo.',
                     });
-
                     return;
                   }
 
                   if (isGuest) {
                     router.push('/login');
                   } else {
-                    signOut({
-                      redirectTo: '/',
-                    });
+                    // 1. Cierra la sesión sin redirigir automáticamente
+                    await signOut({ redirect: false });
+                    // 2. Fuerza la recarga completa a la página de inicio
+                    window.location.assign('/');
                   }
                 }}
               >
