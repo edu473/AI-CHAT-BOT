@@ -1,4 +1,6 @@
-import type { Attachment, UIMessage } from 'ai';
+'use client';
+
+import type { UIMessage } from 'ai';
 import { formatDistance } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -52,6 +54,7 @@ export interface UIArtifact {
   };
 }
 
+// Se eliminan las props 'attachments' y 'setAttachments' de la definición
 function PureArtifact({
   chatId,
   input,
@@ -59,8 +62,6 @@ function PureArtifact({
   handleSubmit,
   status,
   stop,
-  attachments,
-  setAttachments,
   append,
   messages,
   setMessages,
@@ -74,14 +75,11 @@ function PureArtifact({
   setInput: UseChatHelpers['setInput'];
   status: UseChatHelpers['status'];
   stop: UseChatHelpers['stop'];
-  attachments: Array<Attachment>;
-  setAttachments: Dispatch<SetStateAction<Array<Attachment>>>;
+  append: UseChatHelpers['append'];
   messages: Array<UIMessage>;
   setMessages: UseChatHelpers['setMessages'];
-  votes: Array<Vote> | undefined;
-  append: UseChatHelpers['append'];
-  handleSubmit: UseChatHelpers['handleSubmit'];
   reload: UseChatHelpers['reload'];
+  votes: Array<Vote> | undefined;
   isReadonly: boolean;
   selectedVisibilityType: VisibilityType;
 }) {
@@ -221,12 +219,6 @@ function PureArtifact({
 
   const [isToolbarVisible, setIsToolbarVisible] = useState(false);
 
-  /*
-   * NOTE: if there are no documents, or if
-   * the documents are being fetched, then
-   * we mark it as the current version.
-   */
-
   const isCurrentVersion =
     documents && documents.length > 0
       ? currentVersionIndex === documents.length - 1
@@ -332,8 +324,6 @@ function PureArtifact({
                     handleSubmit={handleSubmit}
                     status={status}
                     stop={stop}
-                    attachments={attachments}
-                    setAttachments={setAttachments}
                     messages={messages}
                     append={append}
                     className="bg-background dark:bg-muted"
