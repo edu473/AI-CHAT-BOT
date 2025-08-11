@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { callZabbixAPI } from '@/lib/zabbix-api';
 
 const getHostDetails = tool({
-  description: 'Punto de partida para cualquier diagnóstico. Busca un host en Zabbix usando su nombre, Customer ID (ej: "ID3612012281") o Serial. Devuelve el `hostid` para usar en otras herramientas de Zabbix, el nombre del host, los grupos a los que pertenece (para determinar si es "Red Propia" o no) y un resumen de problemas activos. Siempre debe ser la primera herramienta a ejecutar cuando se solicita un diagnóstico completo.',
+  description: 'Punto de partida para cualquier diagnóstico. Busca un host en Zabbix usando su nombre, Customer ID (ej: "ID3612012281") o Serial. Devuelve el `hostid` para usar en otras herramientas de Zabbix, el nombre del host, los grupos a los que pertenece (para determinar si es "Red Propia" o no) y un resumen de problemas activos. Siempre debe ser la primera herramienta a ejecutar cuando se solicita un diagnóstico completo. Si no se encuentra el cliente y se tiene el customer id se debe probar buscar en la herramienta 7750 `consultarEstatus7750`',
   parameters: z.object({
     identifier: z.string().describe('El nombre, ID, o número de serie del host a buscar. Por ejemplo: "FHTTA678754F" o "ID3612012281".'),
   }),
