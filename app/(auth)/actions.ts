@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { auth } from './auth';
+import { compare } from 'bcrypt-ts';
 import { getUser, updateUserPassword } from '@/lib/db/queries';
 import { signIn } from './auth';
 import { revalidatePath } from 'next/cache';
@@ -41,12 +42,20 @@ export const login = async (
   }
 };
 
-const changePasswordFormSchema = z.object({
-  password: z.string().min(6),
-});
+const changePasswordFormSchema = z
+  .object({
+    oldPassword: z.string().min(1, 'La contraseña anterior es requerida.'),
+    password: z.string().min(6, 'La nueva contraseña debe tener al menos 6 caracteres.'),
+    confirmPassword: z.string().min(6, 'La confirmación de contraseña es requerida.'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Las nuevas contraseñas no coinciden.',
+    path: ['confirmPassword'], // Asigna el error al campo de confirmación
+  });
 
 export interface ChangePasswordActionState {
-    status: 'idle' | 'success' | 'failed' | 'invalid_data';
+    status: 'idle' | 'success' | 'failed' | 'invalid_data' | 'old_password_incorrect';
+    message?: string; // Para mensajes de error específicos
 }
 
 export const changePassword = async (
@@ -55,23 +64,41 @@ export const changePassword = async (
 ): Promise<ChangePasswordActionState> => {
     try {
         const validatedData = changePasswordFormSchema.parse({
+            oldPassword: formData.get('oldPassword'),
             password: formData.get('password'),
+            confirmPassword: formData.get('confirmPassword'),
         });
 
         const session = await auth();
         if (!session?.user?.email) {
-            return { status: 'failed' };
+            return { status: 'failed', message: 'Sesión no encontrada.' };
         }
 
+        const [currentUser] = await getUser(session.user.email);
+        if (!currentUser?.password) {
+            return { status: 'failed', message: 'Usuario no encontrado.' };
+        }
+
+        // Compara la contraseña anterior proporcionada con la guardada en la BD
+        const isOldPasswordCorrect = await compare(
+            validatedData.oldPassword,
+            currentUser.password
+        );
+
+        if (!isOldPasswordCorrect) {
+            return { status: 'old_password_incorrect', message: 'La contraseña anterior es incorrecta.' };
+        }
+
+        // Si todo es correcto, actualiza la contraseña
         await updateUserPassword(session.user.email, validatedData.password);
         
         revalidatePath('/');
         return { status: 'success' };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return { status: 'invalid_data' };
+            return { status: 'invalid_data', message: error.errors[0].message };
         }
-
-        return { status: 'failed' };
+        console.error(error);
+        return { status: 'failed', message: 'Ocurrió un error inesperado.' };
     }
 }
