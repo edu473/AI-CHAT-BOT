@@ -27,7 +27,7 @@ export default function Page() {
     } else if (state.status === 'success') {
       setIsSuccessful(true);
       // Simplemente redirigimos. La sesión ya fue actualizada en el servidor.
-      router.push('/');
+      window.location.assign('/')
     }
   }, [state, router]);
 

@@ -1,7 +1,8 @@
 'use client';
 
-import type { User } from 'next-auth';
+
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react'; 
 
 import { PlusIcon } from '@/components/icons';
 import { SidebarHistory } from '@/components/sidebar-history';
@@ -18,9 +19,11 @@ import {
 import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 
-export function AppSidebar({ user }: { user: User | undefined }) {
+export function AppSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   return (
     <Sidebar className="group-data-[side=left]:border-r-0">
