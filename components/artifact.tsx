@@ -54,7 +54,6 @@ export interface UIArtifact {
   };
 }
 
-// Se eliminan las props 'attachments' y 'setAttachments' de la definición
 function PureArtifact({
   chatId,
   input,
@@ -73,6 +72,7 @@ function PureArtifact({
   chatId: string;
   input: string;
   setInput: UseChatHelpers['setInput'];
+  handleSubmit: UseChatHelpers['handleSubmit'];
   status: UseChatHelpers['status'];
   stop: UseChatHelpers['stop'];
   append: UseChatHelpers['append'];

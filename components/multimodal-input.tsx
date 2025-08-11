@@ -67,8 +67,7 @@ function PureMultimodalInput({
   const resetHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      // Puedes ajustar esta altura si es necesario
-      textareaRef.current.style.height = '58px';
+      textareaRef.current.style.height = '98px';
     }
   };
 
@@ -80,10 +79,12 @@ function PureMultimodalInput({
   useEffect(() => {
     if (textareaRef.current) {
       const domValue = textareaRef.current.value;
+      // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
       setInput(finalValue);
       adjustHeight();
     }
+    // Only run once after hydration
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,7 +99,9 @@ function PureMultimodalInput({
 
   const submitForm = useCallback(() => {
     window.history.replaceState({}, '', `/chat/${chatId}`);
-    handleSubmit(undefined); // Ya no se envían attachments
+
+    handleSubmit(undefined);
+
     setLocalStorageInput('');
     resetHeight();
 
@@ -158,7 +161,7 @@ function PureMultimodalInput({
       <Textarea
         data-testid="multimodal-input"
         ref={textareaRef}
-        placeholder="Envia un mensaje..."
+        placeholder="Envia um mensaje..."
         value={input}
         onChange={handleInput}
         className={cx(
