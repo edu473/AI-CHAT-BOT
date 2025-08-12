@@ -25,6 +25,7 @@ import { simpleFibra } from '@/lib/ai/tools/simplefibra'; // ✅ Importar las he
 import { altiplano } from '@/lib/ai/tools/altiplano';
 import { system815 } from '@/lib/ai/tools/815';
 import { system7750 } from '@/lib/ai/tools/7750';
+import { supabase } from '@/lib/ai/tools/supabase';
 import { corteca } from '@/lib/ai/tools/corteca';
 import { isProductionEnvironment } from '@/lib/constants';
 import { myProvider } from '@/lib/ai/providers';
@@ -156,7 +157,8 @@ Cuando te pregunten qué puedes hacer, responde:
 - **Consultar estados específicos** en Zabbix, routers 815 y 7750, y en la red de INTER.
 - **Obtener valores ópticos** de clientes en la red propia y la red de INTER.
 - **Mostrar el historial de eventos** de un host encontrado en Zabbix.
-- **Ejecutar un diagnóstico avanzado de Wi-Fi** para ONTs Nokia (con serial ALCL).`,
+- **Ejecutar un diagnóstico avanzado de Wi-Fi** para ONTs Nokia (con serial ALCL).
+- **Obtener Alarmas de Altiplano para un cliente especifico.`,
           },
           ...messages.filter((msg) => msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system') as CoreMessage[],
       ];
@@ -199,7 +201,8 @@ Cuando te pregunten qué puedes hacer, responde:
               ...altiplano,
               ...system815,
               ...system7750,
-              ...corteca, 
+              ...corteca,
+              ...supabase,
             },
             onFinish: async ({ response }) => {
               if (!session.user?.id) {
