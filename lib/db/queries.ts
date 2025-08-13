@@ -310,14 +310,19 @@ export async function voteMessage({
     const [existingVote] = await db
       .select()
       .from(vote)
-      .where(and(eq(vote.messageId, messageId)));
+      // CORRECCIÓN: Usar tanto chatId como messageId para encontrar el voto
+      .where(and(eq(vote.chatId, chatId), eq(vote.messageId, messageId)));
 
     if (existingVote) {
+      // Si ya existe un voto, actualízalo
       return await db
         .update(vote)
         .set({ isUpvoted: type === 'up' })
-        .where(and(eq(vote.messageId, messageId), eq(vote.chatId, chatId)));
+        // CORRECCIÓN: Usar ambas claves en la condición WHERE para la actualización
+        .where(and(eq(vote.chatId, chatId), eq(vote.messageId, messageId)));
     }
+
+    // Si no existe un voto, inserta uno nuevo
     return await db.insert(vote).values({
       chatId,
       messageId,

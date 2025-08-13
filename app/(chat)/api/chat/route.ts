@@ -158,7 +158,7 @@ Cuando te pregunten qué puedes hacer, responde:
 - **Obtener valores ópticos** de clientes en la red propia y la red de INTER.
 - **Mostrar el historial de eventos** de un host encontrado en Zabbix.
 - **Ejecutar un diagnóstico avanzado de Wi-Fi** para ONTs Nokia (con serial ALCL).
-- **Obtener Alarmas de Altiplano para un cliente especifico.`,
+- **Obtener Alarmas de Altiplano para un cliente especifico.**`,
           },
           ...messages.filter((msg) => msg.role === 'user' || msg.role === 'assistant' || msg.role === 'system') as CoreMessage[],
       ];
