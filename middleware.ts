@@ -1,3 +1,5 @@
+// middleware.ts
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
@@ -27,18 +29,18 @@ export async function middleware(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  // if (!token) {
-  //   // If we are already on the guest auth page, don't redirect again
-  //   if (pathname === '/api/auth/guest') {
-  //     return NextResponse.next();
-  //   }
+   if (!token) {
+     // If we are already on the guest auth page, don't redirect again
+     if (pathname === '/api/auth/guest') {
+       return NextResponse.next();
+     }
 
-  //   // Construye la URL de redirección usando la URL pública definida.
-  //   const redirectUrl = encodeURIComponent(appUrl + pathname + request.nextUrl.search);
-  //   const guestAuthUrl = new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, appUrl);
+     // Construye la URL de redirección usando la URL pública definida.
+     const redirectUrl = encodeURIComponent(appUrl + pathname + request.nextUrl.search);
+     const guestAuthUrl = new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, appUrl);
 
-  //   return NextResponse.redirect(guestAuthUrl);
-  // }
+     return NextResponse.redirect(guestAuthUrl);
+   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
 
