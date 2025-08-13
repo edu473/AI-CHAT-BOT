@@ -6,7 +6,7 @@ import { z } from 'zod';
  * Esta herramienta se comunica con un backend de Flask para obtener los datos.
  */
 export const consultarValoresOpticos = tool({
-  description: 'Consulta los valores ópticos (potencia de recepción/transmisión) de una ONU en la red de INTER (Red Alquilada). Se usa cuando el `hostgroup` de Zabbix NO contiene "Red propia" O cuando en 7750 el nombre de la OLT empieza por `HUB-`. Requiere el número de serie de la ONU. Formatos validos para el Serial: TPLG00000000, FHTT00000000, o ALCL00000000 (prefijo + 8 caracteres)',
+  description: 'Consulta los valores ópticos (potencia de recepción/transmisión) de una ONU en la red de INTER (Red Alquilada). Se usa cuando el `hostgroup` de Zabbix NO contiene "Red propia" O cuando en 7750 el nombre de la OLT empieza por `HUB-`. Requiere el número de serie de la ONU. Formatos validos para el Serial: TPLG00000000, FHTT00000000, o ALCL00000000 (prefijo + 8 caracteres). Informar siempre al usuario que esta consulta puede demorar hasta 5 minutos y en ocasiones no obtener respuesta.',
   parameters: z.object({
     serial: z.string().describe('El número de serie de la ONU a consultar. Por ejemplo: "FHTT12345678".'),
   }),
