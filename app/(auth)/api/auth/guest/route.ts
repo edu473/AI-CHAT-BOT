@@ -2,9 +2,9 @@ import { auth, signIn } from '@/app/(auth)/auth';
 import { isDevelopmentEnvironment } from '@/lib/constants';
 import { createGuestUser } from '@/lib/db/queries';
 import { getToken } from 'next-auth/jwt';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const redirectUrl = searchParams.get('redirectUrl') || '/';
 
@@ -14,25 +14,22 @@ export async function GET(request: Request) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-
+  // Esta validación es clave para romper el bucle.
+  // Si ya hay un token, simplemente redirige.
+  if (token) {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
+    const absoluteRedirectUrl = new URL(redirectUrl, appUrl).toString();
+    return NextResponse.redirect(absoluteRedirectUrl);
+  }
 
   const [guestUser] = await createGuestUser();
   await signIn('guest', { ...guestUser, redirect: false });
 
-  const session = await auth();
+  // Simplemente redirige. `signIn` se encargará de las cookies.
+  // No es necesario llamar a `auth()` de nuevo ni establecer cookies manualmente.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
   const absoluteRedirectUrl = new URL(redirectUrl, appUrl).toString();
   const response = NextResponse.redirect(absoluteRedirectUrl);
-
-  if (session) {
-    response.cookies.set({
-      name: 'session-token',
-      value: session.user.id,
-      httpOnly: true,
-      path: '/',
-      secure: !isDevelopmentEnvironment,
-    });
-  }
 
   return response;
 }
