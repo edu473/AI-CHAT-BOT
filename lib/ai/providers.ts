@@ -12,6 +12,7 @@ import {
         model: google('gemini-2.5-pro'),
         middleware: extractReasoningMiddleware({ tagName: 'think' }),
       }),
+      'chat-model-lite': google('gemini-2.5-flash-lite'),
       'title-model': google('gemini-2.5-flash-lite-preview-06-17'),
       'artifact-model': google('gemini-2.5-flash-lite-preview-06-17'),
     },

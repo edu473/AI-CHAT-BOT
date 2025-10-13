@@ -17,4 +17,9 @@ export const chatModels: Array<ChatModel> = [
     name: 'Modelo de razonamiento (Gemini 2.5 Pro)',
     description: 'Razonamiento avanzado',
   },
+  {
+    id: 'chat-model-lite',
+    name: 'Modelo ligero (Gemini 2.5 Flash Lite)',
+    description: 'Modelo optimizado para velocidad y eficiencia',
+  },
 ];
