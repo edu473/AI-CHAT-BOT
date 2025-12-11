@@ -13,8 +13,8 @@ import {
         middleware: extractReasoningMiddleware({ tagName: 'think' }),
       }),
       'chat-model-lite': google('gemini-2.5-flash-lite'),
-      'title-model': google('gemini-2.5-flash-lite-preview-06-17'),
-      'artifact-model': google('gemini-2.5-flash-lite-preview-06-17'),
+      'title-model': google('gemini-2.5-flash-lite'),
+      'artifact-model': google('gemini-2.5-flash-lite'),
     },
     // El proveedor de Google no soporta la generación de imágenes.
     // Se ha eliminado la sección imageModels.
